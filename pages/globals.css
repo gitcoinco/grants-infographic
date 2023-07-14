@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://use.typekit.net/hbx6hnl.css');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: #2D3230;
+}
+.svg-container .main-svg {
+  background: transparent !important;
+}
+
+.link {
+  color: #769883;
+  transition: all 0.4s;
+  text-decoration: underline;
+  font-weight: 500;
+}
+.link:hover {
+  opacity: 0.7;
+}

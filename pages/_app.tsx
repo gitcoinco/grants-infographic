@@ -1,7 +1,8 @@
-import '../styles/globals.css';
+import 'tailwindcss/tailwind.css';
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import type { AppProps } from 'next/app';
+import './globals.css'
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import {
   arbitrum,
@@ -11,7 +12,10 @@ import {
   polygon,
   zora,
 } from 'wagmi/chains';
+
+import { alchemyProvider } from 'wagmi/providers/alchemy';
 import { publicProvider } from 'wagmi/providers/public';
+import Layout from '../components/layout';
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [
@@ -22,12 +26,15 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
     zora,
     ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? [goerli] : []),
   ],
-  [publicProvider()]
+  [
+    // alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
+    publicProvider()
+  ]
 );
 
 const { connectors } = getDefaultWallets({
   appName: 'RainbowKit App',
-  projectId: 'YOUR_PROJECT_ID',
+  projectId: '50c583e7b5be16cf960eb228758a796b',
   chains,
 });
 
@@ -42,7 +49,9 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains}>
-        <Component {...pageProps} />
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
       </RainbowKitProvider>
     </WagmiConfig>
   );
