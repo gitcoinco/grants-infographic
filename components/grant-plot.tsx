@@ -83,13 +83,13 @@ var parents = Array(values.length).fill('');
         parents: parents,
         values:  values,
         textinfo: "label+value+percent",
-        outsidetextfont: {"size": 20, "color": "#377eb8"},
+        textfont: {size: 20},
         marker: {"line": {"width": 2}},
-        pathbar: {"visible": false}
+        // pathbar: {"visible": false}
       }]}
-      scrollZoom={true}
+      // scrollZoom={true}
       layout={layout}
-      responsive={true}
+      // responsive={true}
       />
       </div>
   );
