@@ -160,7 +160,7 @@ const Home: NextPage = () => {
                                 {index + 1}
                               </td>
                               <td className="whitespace-prewrap min-w-[200px] px-3 py-3 text-sm">{proj.name}</td>
-                              <td className="whitespace-nowrap px-3 py-3 text-sm text-right">{formatAmount(proj.contributions || 0)}</td>
+                              <td className="whitespace-nowrap px-3 py-3 text-sm text-right">{proj.contributions || 0}</td>
                               <td className="whitespace-nowrap px-3 py-3 text-sm text-right">${formatAmount(proj.crowdfundingAmount.toFixed(2))}</td>
                               <td className="relative whitespace-nowrap py-3 pl-3 pr-4 text-right text-sm font-medium">
                                 ${formatAmount(proj.daiMatch.toFixed(2))}
@@ -189,7 +189,7 @@ const Home: NextPage = () => {
           <div className='max-w-xl m-auto mb-6'>
             <h2 className='text-blue mb-4 text-3xl font-grad'>In closing</h2>
             <p className='text-justify'>
-              Thank you to all our partners for helping make this round possible and for your continued support of Gitcoin. Gitcoin wouldn’t be here today without the ideals and ideas, drive and  dedication that you possess.  
+              Thank you to all our partners for helping make this round possible and for your continued support of Gitcoin. Gitcoin wouldn’t be here today without the ideals, drive, and  dedication that you possess. 
               <br/><br/>
               The Web3 community continues to grow with your example and support. Some of the grantees in this round are familiar favorites and others are relative unknowns. We look forward to seeing how they all evolve as a result of your contributions and this round. 
               <br/><br/>

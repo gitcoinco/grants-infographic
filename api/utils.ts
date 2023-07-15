@@ -16,7 +16,10 @@ export const sortByx = <T extends { amountUSD: number }[]>(arr: T) => {
 };
 
 export const formatAmount = (amount: string | number) => {
-  return Number(amount).toLocaleString("en-US");
+  return Number(amount).toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  });
 };
 
 export const calculateMatch = (projects: ProjectApplication[], match: number) => {

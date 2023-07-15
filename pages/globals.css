@@ -12,6 +12,10 @@ body {
 }
 .svg-container .main-svg {
   background: transparent !important;
+  max-width: 100%;
+}
+.svg-container {
+  width: 100%;
 }
 
 .link {
