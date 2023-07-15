@@ -73,15 +73,15 @@ const Home: NextPage = () => {
                 </div>
                 <div className="!h-[1px] xl:col-span-4 md:col-span-2 border-b border-purple"></div>
                 <div>
-                  <p className="text-orange text-xl pb-2 font-grad">{formatAmount(stats.totalProjects)}</p>
+                  <p className="text-orange text-xl pb-2 font-grad">{formatAmount(stats.totalProjects, true)}</p>
                   <p className="sm:text-base text-sm">Total Projects</p>
                 </div>
                 <div>
-                  <p className="text-orange text-xl pb-2 font-grad">{formatAmount(stats.totalDonations)}</p>
+                  <p className="text-orange text-xl pb-2 font-grad">{formatAmount(stats.totalDonations, true)}</p>
                   <p className="sm:text-base text-sm">Total Donations</p>
                 </div>
                 <div>
-                  <p className="text-orange text-xl pb-2 font-grad">{formatAmount(stats.totalDonors)}</p>
+                  <p className="text-orange text-xl pb-2 font-grad">{formatAmount(stats.totalDonors, true)}</p>
                   <p className="sm:text-base text-sm">Total Donors</p>
                 </div>
                 <div>

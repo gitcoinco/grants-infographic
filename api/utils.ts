@@ -15,10 +15,10 @@ export const sortByx = <T extends { amountUSD: number }[]>(arr: T) => {
   });
 };
 
-export const formatAmount = (amount: string | number) => {
+export const formatAmount = (amount: string | number, noDigits?: boolean) => {
   return Number(amount).toLocaleString("en-US", {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
+    maximumFractionDigits: noDigits ? 0 : 2,
+    minimumFractionDigits: noDigits ? 0 : 2,
   });
 };
 
