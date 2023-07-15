@@ -11,7 +11,7 @@ export default function GrantPlot({values, labels}: {values: number[], labels: s
       showlegend: false,
       displayModeBar: false,
       margin: {t: 30,
-    b: 0,
+    b: 25,
     l: 0,
     r: 0,
     pad: 0
@@ -38,7 +38,7 @@ export default function GrantPlot({values, labels}: {values: number[], labels: s
       showlegend: false,
       displayModeBar: false,
       margin: {t: 10,
-    b: 0,
+    b: 25,
     l: 0,
     r: 0,
     pad: 0
@@ -68,7 +68,7 @@ export default function GrantPlot({values, labels}: {values: number[], labels: s
   showlegend: false,
   displayModeBar: false,
   margin: {t: 30,
-    b: 0,
+    b: 25,
     l: 0,
     r: 0,
     pad: 0
