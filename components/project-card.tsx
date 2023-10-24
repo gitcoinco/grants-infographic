@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useState } from "react";
 
 export default function ProjectCard({
   imgSrc,
@@ -11,6 +12,9 @@ export default function ProjectCard({
   description: string;
   link?: string;
 }) {
+  const [isSliced, setIsSliced] = useState(true);
+  const descriptionArray = description.split("\n");
+
   return (
     <div className="flex gap-8 flex-col max-w-[90vw]">
       <div className="flex-shrink-0 flex gap-8 items-center">
@@ -37,14 +41,31 @@ export default function ProjectCard({
       </div>
 
       <p className="max-w-[90vw]">
-        {description.split("\n").map((item, index) => (
-          <span
-            key={index}
-            className=" mb-3 block whitespace-pre-line text-justify 2xl:text-base text-sm break-words"
+        {description
+          .slice(0, isSliced ? 500 : description.length)
+          .split("\n")
+          .map((item, index) => (
+            <span
+              key={index}
+              className={`
+                ${
+                  index !== (isSliced ? description.slice(0, 500).split("\n").length - 1 : descriptionArray.length - 1) ? "block mb-3 " : ""
+                } whitespace-pre-line text-justify 2xl:text-base text-sm break-words`}
+            >
+              {item}
+            </span>
+          ))}
+
+        {isSliced && description.length >= 500 && <span>...</span>}
+
+        {description.length >= 500 && (
+          <a
+            onClick={() => setIsSliced(!isSliced)}
+            className="2xl:text-base text-sm text-green underline inline-block cursor-pointer pl-2"
           >
-            {item}
-          </span>
-        ))}
+            {isSliced ? " View more" : " View less"}
+          </a>
+        )}
       </p>
     </div>
   );
