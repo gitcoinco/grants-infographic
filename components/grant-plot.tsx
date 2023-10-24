@@ -7,15 +7,16 @@ export default function GrantPlot({values, labels}: {values: number[], labels: s
   const { height, width } = useWindowDimensions();
   useEffect(() => {
       window.matchMedia("(min-width: 37.5rem)").matches ? setLayout({
-      font: {size: 18},
-      showlegend: false,
-      displayModeBar: false,
-      margin: {t: 30,
-    b: 25,
-    l: 0,
-    r: 0,
-    pad: 0
-  },
+        font: {size: 18},
+        showlegend: false,
+        displayModeBar: false,
+        margin: {
+          t: 30,
+          b: 25,
+          l: 0,
+          r: 0,
+          pad: 0
+        },
       width: undefined,
       scene:{
         xaxis: {
