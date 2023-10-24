@@ -1,3 +1,6 @@
+import { BigNumber } from "ethers";
+import { Address } from "wagmi";
+
 export interface MetadataPointer {
   /**
    * The decentralized storage protocol
@@ -57,17 +60,17 @@ export interface Round {
    * The on-chain unique round ID
    */
   id?: string;
-  /**
-   * Metadata of the Round to be stored off-chain
-   */
-  roundMetadata?: {
+
+  metadata?: {
     name: string;
-    roundType: string;
     eligibility: Eligibility;
+    feesAddress: string;
+    feesPercentage: number;
     programContractAddress: string;
     quadraticFundingConfig?: {
       matchingFundsAvailable: number;
       matchingCap: boolean;
+      // percentage
       matchingCapAmount?: number;
       minDonationThreshold?: boolean;
       minDonationThresholdAmount?: number;
@@ -81,15 +84,15 @@ export interface Round {
   /**
    * Pointer to round metadata in a decentralized storage e.g IPFS, Ceramic etc.
    */
-  store?: MetadataPointer;
+  // store?: MetadataPointer;
   /**
    * Pointer to application metadata in a decentralized storage e.g IPFS, Ceramic etc.
    */
-  applicationStore?: MetadataPointer;
+  // applicationStore?: MetadataPointer;
   /**
    * Voting contract address
    */
-  votingStrategy: string;
+  // votingStrategy: string;
   /**
    * Unix timestamp of the start of the round
    */
@@ -114,11 +117,28 @@ export interface Round {
   /**
    * Contract address of the program to which the round belongs
    */
-  ownedBy: string;
+  // ownedBy: string;
   /**
    * List of projects approved for the round
    */
-  approvedProjects?: Project[];
+  amountUSD: number;
+  applicationMetaPtr: string;
+  applicationMetadata: {
+    // applicationSchema
+
+    lastUpdatedOn: string;
+    version: string;
+  };
+  createdAtBlock: number;
+
+  // approvedProjects?: Project[];
+  matchAmount: string;
+  matchAmountUSD: number;
+  metaPtr: string;
+  votes: number;
+  uniqueContributors: number;
+  rate: number;
+  matchingPoolUSD: number;
 }
 
 export type GrantApplicationFormAnswer = {
@@ -129,53 +149,6 @@ export type GrantApplicationFormAnswer = {
   type?: string;
 };
 
-export interface GrantApplication {
-  /**
-   * The on-chain unique grant application ID
-   */
-  id: GrantApplicationId;
-  /**
-   * The round contract address applied to
-   */
-  round: string;
-  /**
-   * Recipient wallet address of grantee
-   */
-  recipient: string;
-  /**
-   * Project information
-   */
-  project?: Project;
-  /** List of answers to questions */
-  answers?: any[];
-  /**
-   * Pointer to the list of approved/rejected grant applications in a decentralized storage
-   * e.g IPFS, Ceramic etc.
-   */
-  projectsMetaPtr: MetadataPointer;
-  /**
-   * Status of each grant application
-   */
-  status?: string;
-  /**
-   * Index of a grant application
-   */
-  applicationIndex?: number;
-  /**
-   * Created timestamp of a grant application
-   */
-  createdAt: string;
-}
-
-export type Project = {
-  grantApplicationId: GrantApplicationId;
-  projectRegistryId: ProjectRegistryId;
-  recipient: recipient;
-  projectMetadata: ProjectMetadata;
-  grantApplicationFormAnswers: GrantApplicationFormAnswer[];
-  status: ApplicationStatus;
-  applicationIndex: number;
-};
 export type GrantApplicationId = string;
 export type ProjectRegistryId = string;
 export type recipient = string;
@@ -199,6 +172,7 @@ interface ProjectOwner {
 }
 
 export type ProjectMetadata = {
+  id: string;
   title: string;
   description: string;
   website: string;
@@ -208,9 +182,38 @@ export type ProjectMetadata = {
   userGithub?: string;
   projectGithub?: string;
   // credentials?: ProjectCredentials;
-  owners: ProjectOwner[];
   createdAt?: number;
+  metaPtr: {
+    pointer: string;
+    protocol: string;
+  }
 };
+
+export interface ProjectApplication {
+  // $ of crowdfunding
+  amountUSD: number;
+  createdAtBlock: number;
+  id: string;
+  metadata: { application: { project: ProjectMetadata; recipient: string } };
+  projectId: Address;
+  roundId: string;
+  status: string;
+  statusUpdatedAtBlock: number;
+  uniqueContributors: number;
+  votes: number;
+}
+export interface ProjectIPFSMetadata {
+  applicationId: string;
+  projectName: string;
+  projectPayoutAddress: string;
+  // decimal
+  matchPoolPercentage: number;
+  matchAmountInToken: number;
+}
+
+export interface Project extends ProjectApplication {
+  ipfsMetadata: ProjectIPFSMetadata;
+}
 
 export enum ProgressStatus {
   IS_SUCCESS = "IS_SUCCESS",
@@ -221,10 +224,78 @@ export enum ProgressStatus {
 
 export type PayoutToken = {
   name: string;
-  chainId: string;
+  chainId: number;
   address: string;
   decimal: number;
   logo?: string;
   default?: boolean;
   redstoneTokenId?: string;
 };
+
+export type RoundInfo = {
+  preamble: string;
+  closing: string;
+  projects: {
+    id: string;
+    description: string;
+  }[]
+}
+
+export type MatchingStatsData = {
+  index?: number;
+  projectName: string;
+  uniqueContributorsCount?: number;
+  contributionsCount: number;
+  matchPoolPercentage: number;
+  projectId: string;
+  applicationId: string;
+  matchAmountInToken: BigNumber;
+  originalMatchAmountInToken: BigNumber;
+  projectPayoutAddress: string;
+  status?: string;
+  hash?: string;
+  matchAmount: number;
+  matchAmountUSD: number;
+};
+
+export interface Program {
+  /**
+   * The on-chain unique program ID
+   */
+  id?: string;
+  /**
+   * Metadata of the Grant Program to be stored off-chain
+   */
+  metadata: {
+    name: string;
+  };
+  /**
+   * Pointer to a decentralized storage e.g IPFS, Ceramic etc.
+   */
+  store?: MetadataPointer;
+  /**
+   * Addresses of wallets that will have admin privileges to operate the Grant program
+   */
+  operatorWallets: Array<string>;
+  /**
+   * Network Chain Information
+   */
+  chain?: {
+    id: number;
+    name?: string;
+    logo?: string;
+  };
+}
+
+export const RedstoneTokenIds = {
+  FTM: "FTM",
+  USDC: "USDC",
+  DAI: "DAI",
+  ETH: "ETH",
+  ARB: "ARB",
+  BUSD: "BUSD",
+  GTC: "GTC",
+  MATIC: "MATIC",
+  AVAX: "AVAX",
+  CVP: "CVP",
+} as const;

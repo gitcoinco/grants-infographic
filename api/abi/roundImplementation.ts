@@ -1,6 +1,6 @@
 /** GrantRoundImplementation contract ABI in Human Readable ABI Format  */
 
-const roundImplementation = [
+const roundImplementationAbi = [
   "event ApplicationMetaPtrUpdated(tuple(uint256 protocol, string pointer) oldMetaPtr, tuple(uint256 protocol, string pointer) newMetaPtr)",
   "event ApplicationStatusesUpdated(uint256 indexed index, uint256 indexed status)",
   "event ApplicationsEndTimeUpdated(uint256 oldTime, uint256 newTime)",
@@ -62,4 +62,4 @@ const roundImplementation = [
   "function withdraw(address tokenAddress, address recipent)",
 ];
 
-export default roundImplementation;
+export default roundImplementationAbi;

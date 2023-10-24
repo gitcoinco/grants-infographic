@@ -9,7 +9,7 @@ import { COMMUNITY_ROUND_ADDRESS } from '../constants/community-round';
 const Home: NextPage = () => {
   const router = useRouter();
   useEffect(() => {
-    router.push(`/${COMMUNITY_ROUND_ADDRESS}`);
+    router.push(`/1/${COMMUNITY_ROUND_ADDRESS}`);
   }, [router]);
   return (<></>)
 };

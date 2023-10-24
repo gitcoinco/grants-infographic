@@ -18,12 +18,26 @@ body {
   width: 100%;
 }
 
-.link {
-  color: #769883;
+.link,
+.ql-snow a,
+.wysiwyg-render a {
+  color: #769883 !important;
   transition: all 0.4s;
   text-decoration: underline;
   font-weight: 500;
 }
-.link:hover {
+.link:hover,
+.ql-editor a:hover,
+.ql-snow a:hover,
+.wysiwyg-render a:hover {
   opacity: 0.7;
 }
+
+.ql-editor p {
+  font-size: 16px;
+  line-height: 24px;
+  font-family: 'Inter', sans-serif;
+  color: #2D3230;
+  text-align: justify;
+}
+

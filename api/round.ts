@@ -1,13 +1,26 @@
-import { calculateMatch, fetchFromIPFS, graphql_fetch } from "./utils";
+import { fetchFromIPFS, formatCurrency, graphql_fetch } from "./utils";
 import { Address, getAddress } from "viem";
 import {
   ApplicationStatus,
   Eligibility,
+  MatchingStatsData,
   MetadataPointer,
+  PayoutToken,
   Project,
+  ProjectApplication,
+  ProjectIPFSMetadata,
   ProjectMetadata,
   Round,
+  RoundInfo,
 } from "./types";
+import { BigNumber, ethers } from "ethers";
+import roundImplementationAbi from "./abi/roundImplementation";
+import merklePayoutStrategyImplementationAbi from "./abi/merklePayoutStrategyImplementation";
+
+const pinataSDK = require("@pinata/sdk");
+const pinata = new pinataSDK({
+  pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
+});
 
 /**
  * Shape of subgraph response
@@ -35,14 +48,6 @@ export interface RoundResult {
   token: string;
   votingStrategy: string;
   projectsMetaPtr?: MetadataPointer | null;
-  projects: RoundProjectResult[];
-}
-interface RoundProjectResult {
-  id: string;
-  project: string;
-  status: string | number;
-  applicationIndex: number;
-  metaPtr: MetadataPointer;
 }
 
 export interface ProjectVote {
@@ -75,106 +80,44 @@ export type RoundProject = {
   payoutAddress: string;
 };
 
-export async function getRoundById(
-  roundId: string,
-  chainId: any
-): Promise<{ data: Round | undefined; success: boolean; error: string }> {
+export const getRoundsByChainId = async (
+  chainId: number
+): Promise<{ data: Round[] | undefined; success: boolean; error: string }> => {
   try {
-    // get the subgraph for round by $roundId
-    const res: GetRoundByIdResult = await graphql_fetch(
-      `
-        query GetRoundById($roundId: String) {
-          rounds(where: {
-            id: $roundId
-          }) {
-            id
-            program {
-              id
-            }
-            roundMetaPtr {
-              protocol
-              pointer
-            }
-            applicationMetaPtr {
-              protocol
-              pointer
-            }
-            applicationsStartTime
-            applicationsEndTime
-            roundStartTime
-            roundEndTime
-            token
-            votingStrategy
-            projectsMetaPtr {
-              pointer
-            }
-            projects(
-              first: 1000
-              where:{
-                status: 1
-              }
-            ) {
-              id
-              project
-              status
-              applicationIndex
-              metaPtr {
-                protocol
-                pointer
-              }
-            }
-          }
-        }
-      `,
-      chainId,
-      { roundId }
+    const resp = await fetch(
+      `https://indexer-production.fly.dev/data/${chainId}/rounds.json`,
+      {
+        method: "GET",
+      }
     );
-
-    const round: RoundResult = res.data.rounds[0];
-
-    const roundMetadata: RoundMetadata = await fetchFromIPFS(
-      round.roundMetaPtr.pointer
-    );
-
-    round.projects = round.projects.map((project) => {
-      return {
-        ...project,
-        status: convertStatus(project.status),
-      };
-    });
-
-    // const approvedProjectsWithMetadata = await loadApprovedProjectsMetadata(
-    //   round,
-    //   chainId
-    // );
+    const data = (await resp.json()) as Round[];
 
     return {
-      data: {
-        id: roundId,
-        roundMetadata,
-        applicationsStartTime: new Date(
-          parseInt(round.applicationsStartTime) * 1000
-        ),
-        applicationsEndTime: new Date(
-          parseInt(round.applicationsEndTime) * 1000
-        ),
-        roundStartTime: new Date(parseInt(round.roundStartTime) * 1000),
-        roundEndTime: new Date(parseInt(round.roundEndTime) * 1000),
-        token: round.token,
-        votingStrategy: round.votingStrategy,
-        ownedBy: round.program.id,
-        // approvedProjects: approvedProjectsWithMetadata,
-      },
-      error: "",
+      data,
       success: true,
+      error: "",
     };
-  } catch (error) {
-    const err = error as string;
-    return { data: undefined, success: false, error: err };
-    console.error("getRoundById", error);
-    throw Error("Unable to fetch round");
+  } catch (err) {
+    return { data: undefined, success: false, error: err as string };
   }
-}
+};
+
+export const getRoundInfo = async (roundId: string) => {
+  try {
+    // get only the most recent one by roundName
+    const response = await pinata.pinList({
+      metadata: { name: roundId },
+      pageLimit: 1,
+    });
+    const hash = response.rows && (response.rows[0]?.ipfs_pin_hash as string);
+    if (!hash) return { data: undefined, success: true, error: "" };
+    const roundInfo: string = await fetchFromIPFS(hash, true);
+    return { data: JSON.parse(roundInfo), success: true, error: "" };
+  } catch (err) {
+    console.log(err);
+    return { data: undefined, success: false, error: err as string };
+  }
+};
 
 export function convertStatus(status: string | number) {
   switch (status) {
@@ -192,69 +135,35 @@ export function convertStatus(status: string | number) {
 }
 
 async function loadApprovedProjectsMetadata(
-  round: RoundResult,
-  chainId: any
+  projects: ProjectApplication[]
 ): Promise<Project[]> {
-  if (round.projects.length === 0) {
-    return [];
-  }
-
-  const approvedProjects = round.projects;
-
-  const fetchApprovedProjectMetadata: Promise<Project>[] = approvedProjects.map(
-    (project: RoundProjectResult) =>
-      fetchMetadataAndMapProject(project, chainId)
+  const fetchApprovedProjectMetadata: Promise<Project>[] = projects.map(
+    (project) => fetchMetadataAndMapProject(project)
   );
 
   return Promise.all(fetchApprovedProjectMetadata);
 }
 
 async function fetchMetadataAndMapProject(
-  project: RoundProjectResult,
-  chainId: any
+  project: ProjectApplication
 ): Promise<Project> {
-  const applicationData = await fetchFromIPFS(project.metaPtr.pointer);
-  // NB: applicationData can be in two formats:
-  // old format: { round, project, ... }
-  // new format: { signature: "...", application: { round, project, ... } }
-  const application = applicationData.application || applicationData;
-  const projectMetadataFromApplication = application.project;
-  const projectRegistryId = `0x${projectMetadataFromApplication.id}`;
-  const projectOwners = await getProjectOwners(chainId, projectRegistryId);
+  const applicationData: ProjectIPFSMetadata = await fetchFromIPFS(
+    project.metadata.application.project.metaPtr.pointer
+  );
 
   return {
-    grantApplicationId: project.id,
-    grantApplicationFormAnswers: application.answers,
-    projectRegistryId: project.project,
-    recipient: application.recipient,
-    projectMetadata: {
-      ...projectMetadataFromApplication,
-      owners: projectOwners.map((address: string) => ({ address })),
-    },
-    status: ApplicationStatus.APPROVED,
-    applicationIndex: project.applicationIndex,
+    ...project,
+    ipfsMetadata: applicationData,
   };
 }
 
-export interface ProjectApplication {
-  amountUSD: number;
-  createdAtBlock: number;
-  id: string;
-  metadata: { application: { project: ProjectMetadata } };
-  projectId: Address;
-  projectNumber: number;
-  roundId: string;
-  status: string;
-  statusUpdatedAtBlock: number;
-  uniqueContributors: number;
-  votes: number;
-  votesArray: ProjectVote[];
-  match: number;
-}
-export const getProjectsApplications = async (roundId: Address, totalRoundMatch: number) => {
+export const getProjectsApplications = async (
+  roundId: Address,
+  chainId: number
+) => {
   try {
     const resp = await fetch(
-      `https://indexer-grants-stack.gitcoin.co/data/1/rounds/${getAddress(
+      `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
         roundId
       )}/applications.json`,
       {
@@ -262,54 +171,68 @@ export const getProjectsApplications = async (roundId: Address, totalRoundMatch:
       }
     );
     const data = (await resp.json()) as ProjectApplication[];
-    
+
     const approvedData = data.filter(
       (ap) => ap.status == ApplicationStatus.APPROVED
     );
-
-    const projects = await loadProjectsVotes(
-      roundId,
-      approvedData
-    );
-
-    const matchedData = calculateMatch(projects, totalRoundMatch);
-    return projects;
+    // const projects = await loadProjectsVotes(roundId, approvedData);
+    // const projects = await loadApprovedProjectsMetadata(approvedData);
+    // const matchedData = calculateMatch(projects, totalRoundMatch);
+    return approvedData;
   } catch (err) {
     console.log(err);
   }
 };
 
-async function loadProjectsVotes(
-  roundId: Address,
-  projects: ProjectApplication[]
-): Promise<ProjectApplication[]> {
-  if (projects.length === 0) {
-    return [];
+// async function loadProjectsVotes(
+//   roundId: Address,
+//   projects: ProjectApplication[]
+// ): Promise<ProjectApplication[]> {
+//   if (projects.length === 0) {
+//     return [];
+//   }
+
+//   const roundVotes = (await getRoundVotes(roundId)) || [];
+//   const projectsVotes: Promise<ProjectApplication>[] = projects.map(
+//     (project: ProjectApplication) => mapProjectVotes(project, roundVotes)
+//   );
+
+//   return Promise.all(projectsVotes);
+// }
+
+// async function mapProjectVotes(
+//   project: ProjectApplication,
+//   roundVotes: ProjectVote[]
+// ): Promise<ProjectApplication> {
+//   const votesArray =
+//     roundVotes.filter((vote) => vote.projectId == project.projectId) || [];
+//   return {
+//     ...project,
+//     votesArray,
+//   };
+// }
+
+export const getRoundVotes = async (roundId: Address) => {
+  try {
+    const resp = await fetch(
+      `https://indexer-production.fly.dev/data/1/rounds/${getAddress(
+        roundId
+      )}/votes.json`,
+      {
+        method: "GET",
+      }
+    );
+    const data = await resp.json();
+    return data as ProjectVote[];
+  } catch (err) {
+    console.log(err);
   }
-
-  const fetchProjectsVotes: Promise<ProjectApplication>[] = projects.map(
-    (project: ProjectApplication) =>
-      fetchVotesAndMapProject(roundId, project)
-  );
-
-  return Promise.all(fetchProjectsVotes);
-}
-
-async function fetchVotesAndMapProject(
-  roundId: Address,
-  project: ProjectApplication,
-): Promise<ProjectApplication> {
-const votesArray = await getProjectVotes(roundId, project.projectId) || [];
-  return {
-   ...project,
-   votesArray
-  };
-}
+};
 
 export const getRoundContributors = async (roundId: Address) => {
   try {
     const resp = await fetch(
-      `https://indexer-grants-stack.gitcoin.co/data/1/rounds/${getAddress(
+      `https://indexer-production.fly.dev/data/1/rounds/${getAddress(
         roundId
       )}/contributors.json`,
       {
@@ -329,11 +252,12 @@ export const getRoundContributors = async (roundId: Address) => {
 
 export const getProjectContributors = async (
   roundId: Address,
-  projectId: Address
+  projectId: Address,
+  chainId: number
 ) => {
   try {
     const resp = await fetch(
-      `https://indexer-grants-stack.gitcoin.co/data/1/rounds/${getAddress(
+      `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
         roundId
       )}/projects/${getAddress(projectId)}/contributors.json`,
       {
@@ -346,27 +270,6 @@ export const getProjectContributors = async (
     );
     const data = await resp.json();
     return data as any[];
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-export const getProjectVotes = async (roundId: Address, projectId: string) => {
-  try {
-    const resp = await fetch(
-      `https://indexer-grants-stack.gitcoin.co/data/1/rounds/${getAddress(
-        roundId
-      )}/projects/${projectId}/votes.json`,
-      {
-        method: "GET",
-        // headers: {
-        //   Accept: "application/json",
-        //   "Content-Type": "application/json",
-        // },
-      }
-    );
-    const data = await resp.json();
-    return data as ProjectVote[];
   } catch (err) {
     console.log(err);
   }
@@ -407,5 +310,56 @@ export async function getProjectOwners(
   } catch (error) {
     console.log("getProjectOwners", error);
     throw Error("Unable to fetch project owners");
+  }
+}
+
+//  Fetch finalized matching distribution
+export async function fetchMatchingDistribution(
+  roundId: string | undefined,
+  signerOrProvider: any,
+  token: PayoutToken,
+  roundMatchingPoolUSD: number
+) {
+  try {
+    if (!roundId) {
+      throw new Error("Round ID is required");
+    }
+    let matchingDistribution: MatchingStatsData[] = [];
+    const roundImplementation = new ethers.Contract(
+      roundId,
+      roundImplementationAbi,
+      signerOrProvider
+    );
+    const payoutStrategyAddress = await roundImplementation.payoutStrategy();
+    const payoutStrategy = new ethers.Contract(
+      payoutStrategyAddress,
+      merklePayoutStrategyImplementationAbi,
+      signerOrProvider
+    );
+    const distributionMetaPtrRes = await payoutStrategy.distributionMetaPtr();
+    const distributionMetaPtr = distributionMetaPtrRes.pointer;
+
+    if (distributionMetaPtr !== "") {
+      // fetch distribution from IPFS
+      const matchingDistributionRes = await fetchFromIPFS(distributionMetaPtr);
+      matchingDistribution = matchingDistributionRes.matchingDistribution;
+
+      // parse matchAmountInToken to a valid BigNumber + add matchAmount
+      matchingDistribution = matchingDistribution.map((distribution) => {
+        const x = BigNumber.from((distribution.matchAmountInToken as any).hex);
+        distribution.matchAmountInToken = x;
+        const y = Number(BigInt(x._hex).toString());
+        const z = formatCurrency(x, token.decimal);
+        return {
+          ...distribution,
+          matchAmount: Number(z || 0),
+          matchAmountUSD:
+            distribution.matchPoolPercentage * roundMatchingPoolUSD,
+        };
+      });
+    }
+    return matchingDistribution;
+  } catch (err) {
+    console.log(err);
   }
 }
