@@ -1,13 +1,13 @@
 import { createContext } from "react";
 
 export type Filters = {
-  chainId: string;
+  chainId: string | undefined;
   roundId: string | undefined;
 };
 
 const filtersContext = createContext({
   filters: {
-    chainId: '1',
+    chainId: undefined,
     roundId: undefined,
   } as Filters,
   setFilters: (filters: Filters) => {

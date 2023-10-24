@@ -11,6 +11,10 @@ const roundsContext = createContext({
   setRounds: (rounds: Round[] | undefined) => {
     rounds = rounds;
   },
+  roundsLoading: true,
+  setRoundsLoading: (roundsLoading: boolean) => {
+    roundsLoading = roundsLoading
+  }
 });
 
 export default roundsContext;

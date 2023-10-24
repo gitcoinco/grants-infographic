@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import gitcoinLogo from "/assets/gitcoin-logo.svg";
 import heroBg from "/assets/hero-bg.svg";
 import Image from "next/image";
@@ -24,7 +24,8 @@ type OptionType = {
 
 export default function Header() {
   const { filters, setFilters } = useContext(filtersContext);
-  const { rounds, setRounds } = useContext(roundsContext);
+  const { setRounds, setRoundsLoading, roundsLoading } =
+    useContext(roundsContext);
   const [newFilters, setNewFilters] = useState(filters);
   const router = useRouter();
   const chains: OptionType[] =
@@ -36,63 +37,56 @@ export default function Header() {
     }) || [];
 
   const [roundOptions, setRoundOptions] = useState<OptionType[]>([]);
+  const [allRounds, setAllRounds] = useState<Round[]>();
 
-  useEffect(() => {
-    setNewFilters(filters);
-  }, [filters]);
-
-  useEffect(() => {
-    const getRounds = async () => {
-      if (!filters.chainId || newFilters.chainId === filters.chainId) return;
-      try {
-        const { data, error, success } = await getRoundsByChainId(
-          Number(newFilters.chainId)
-        );
-        if (!success) throw new Error(error);
-
-        setRounds(data);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    getRounds();
-  }, [newFilters]);
-
-  useEffect(() => {
-    const getRounds = async () => {
-      if (!filters.chainId) return;
-      try {
-        const { data, error, success } = await getRoundsByChainId(
-          Number(newFilters.chainId)
-        );
-        if (!success) throw new Error(error);
-        setRounds(data);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    getRounds();
+  const getRounds = useCallback(async (chainId: string) => {
+    if (!chainId) return;
+    try {
+      const { data, error, success } = await getRoundsByChainId(
+        Number(chainId)
+      );
+      if (!success) throw new Error(error);
+      return data;
+    } catch (err) {
+      console.log(err);
+    }
   }, []);
 
   useEffect(() => {
+    if (!filters || !roundsLoading) return;
+    const init = async () => {
+      setNewFilters(filters);
+      if (!filters.chainId) return;
+      const data = await getRounds(filters.chainId);
+      setAllRounds(data);
+      setRounds(data);
+      setRoundsLoading(false);
+    };
+    init();
+  }, [filters]);
+
+  useEffect(() => {
     setRoundOptions(
-      rounds?.map((round) => {
+      allRounds?.map((round) => {
         return {
           value: round.id || "",
           label: round.metadata?.name || "",
         };
       }) || []
     );
-  }, [rounds]);
+  }, [allRounds]);
 
-  const handleChainChange = (option: SingleValue<OptionType>) => {
+  const handleChainChange = async (option: SingleValue<OptionType>) => {
     setNewFilters({ ...newFilters, chainId: option?.value || "" });
+    if (!option?.value) return;
+    const data = await getRounds(option.value);
+    setAllRounds(data);
   };
 
   const handleRoundChange = (option: SingleValue<OptionType>) => {
-    console.log(option);
     setNewFilters({ ...newFilters, roundId: option?.value });
     setFilters(newFilters);
+    setRounds(allRounds);
     router.push(`/${newFilters.chainId}/${option?.value}`);
   };
 
@@ -101,7 +95,7 @@ export default function Header() {
       <Image src={gitcoinLogo} alt="gitcoin logo" width="89" height="30" />
       <div className="flex items-center gap-4 flex-wrap">
         <Select
-          defaultValue={chains.find((chain) => chain.value == filters.chainId)}
+          value={chains.find((chain) => chain.value == newFilters.chainId)}
           onChange={(option) => handleChainChange(option)}
           options={chains || []}
           className="w-40"
@@ -111,7 +105,9 @@ export default function Header() {
           isSearchable
           options={roundOptions || []}
           onChange={(option) => handleRoundChange(option)}
-          value={roundOptions.find((round) => round.value == filters.roundId)}
+          value={roundOptions.find(
+            (round) => round.value == newFilters.roundId
+          )}
           placeholder="Select a round"
           className="w-60"
         />

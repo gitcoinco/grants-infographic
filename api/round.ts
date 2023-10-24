@@ -317,7 +317,8 @@ export async function getProjectOwners(
 export async function fetchMatchingDistribution(
   roundId: string | undefined,
   signerOrProvider: any,
-  token: PayoutToken
+  token: PayoutToken,
+  roundMatchingPoolUSD: number
 ) {
   try {
     if (!roundId) {
@@ -348,8 +349,13 @@ export async function fetchMatchingDistribution(
         const x = BigNumber.from((distribution.matchAmountInToken as any).hex);
         distribution.matchAmountInToken = x;
         const y = Number(BigInt(x._hex).toString());
-        const z = formatCurrency(x, token.decimal, 2);
-        return { ...distribution, matchAmount: Number(z || 0) };
+        const z = formatCurrency(x, token.decimal);
+        return {
+          ...distribution,
+          matchAmount: Number(z || 0),
+          matchAmountUSD:
+            distribution.matchPoolPercentage * roundMatchingPoolUSD,
+        };
       });
     }
     return matchingDistribution;

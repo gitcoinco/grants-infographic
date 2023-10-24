@@ -7,6 +7,7 @@ export default function Stats({
   round,
   totalCrowdfunded,
   totalProjects,
+  // matching value by projects
   projectsAmount,
   children,
 }: {
@@ -19,8 +20,7 @@ export default function Stats({
   const matchingCapPercent =
     round.metadata?.quadraticFundingConfig?.matchingCapAmount || 0;
   const matchingCapValue =
-    ((round.metadata?.quadraticFundingConfig?.matchingFundsAvailable ||
-      0) *
+    ((round.metadata?.quadraticFundingConfig?.matchingFundsAvailable || 0) *
       (matchingCapPercent || 0)) /
     100;
   const projectsReachedMachingCap: number =
@@ -32,11 +32,7 @@ export default function Stats({
         <div className="grid xl:grid-cols-4 grid-cols-2 gap-4 child:py-2">
           <div>
             <p className="text-orange text-xl pb-2 font-grad">
-              ${" "}
-              {formatAmount(
-                round.metadata?.quadraticFundingConfig
-                  ?.matchingFundsAvailable || 0
-              )}
+              $ {formatAmount(round.matchingPoolUSD || 0)}
             </p>
             <p className="sm:text-base text-sm">Matching Pool</p>
           </div>
@@ -46,13 +42,15 @@ export default function Stats({
             </p>
             <p className="sm:text-base text-sm">Total USD Crowdfunded</p>
           </div>
-          <div>
-            <p className="text-orange text-xl pb-2 font-grad">
-              {matchingCapPercent.toFixed()}% (${formatAmount(matchingCapValue)}
-              )
-            </p>
-            <p className="sm:text-base text-sm">Matching Cap</p>
-          </div>
+          {!!matchingCapPercent && (
+            <div>
+              <p className="text-orange text-xl pb-2 font-grad">
+                {matchingCapPercent.toFixed()}% ($
+                {formatAmount(matchingCapValue)})
+              </p>
+              <p className="sm:text-base text-sm">Matching Cap</p>
+            </div>
+          )}
           <div>
             <p className="text-orange text-xl pb-2 font-grad">
               -{}
@@ -79,15 +77,17 @@ export default function Stats({
             </p>
             <p className="sm:text-base text-sm">Total Donors</p>
           </div>
-          <div>
-            <p className="text-orange text-xl pb-2 font-grad">
-              {projectsReachedMachingCap}
-            </p>
-            <p className="sm:text-base text-sm">
-              {projectsReachedMachingCap == 1 ? "Project" : "Projects"} Reaching
-              Matching Cap
-            </p>
-          </div>
+          {!!matchingCapPercent && (
+            <div>
+              <p className="text-orange text-xl pb-2 font-grad">
+                {projectsReachedMachingCap}
+              </p>
+              <p className="sm:text-base text-sm">
+                {projectsReachedMachingCap == 1 ? "Project" : "Projects"}{" "}
+                Reaching Matching Cap
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-center">{children}</div>
       </div>

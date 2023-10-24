@@ -51,8 +51,12 @@ const wagmiConfig = createConfig({
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const [filters, setFilters] = useState<Filters>({ chainId: '1', roundId: "" });
+  const [filters, setFilters] = useState<Filters>({
+    chainId: undefined,
+    roundId: undefined,
+  });
   const [rounds, setRounds] = useState<Round[] | undefined>();
+  const [roundsLoading, setRoundsLoading] = useState(true);
 
   const handleSetFilters = (filters: Filters) => {
     setFilters(filters);
@@ -60,7 +64,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains}>
-        <roundsContext.Provider value={{ rounds, setRounds }}>
+        <roundsContext.Provider value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}>
           <filtersContext.Provider value={{ filters, setFilters }}>
             <Layout>
               <Component {...pageProps} />

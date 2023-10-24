@@ -50,7 +50,7 @@ const GrantPlot = dynamic(import("../../components/grant-plot"), {
 });
 
 const Home: NextPage = () => {
-  const { rounds, setRounds } = useContext(roundsContext);
+  const { rounds, roundsLoading } = useContext(roundsContext);
   const { setFilters } = useContext(filtersContext);
 
   // const { address, isConnected } = useAccount();
@@ -72,48 +72,58 @@ const Home: NextPage = () => {
   useEffect(() => {
     setId(router.query.grantId as Address);
     setChainId(Number(router.query.chainId as string));
-  });
+  }, [router.query.grantId, router.query.chainId]);
+
   useEffect(() => {
     if (id && chainId) {
       setFilters({ chainId: chainId.toString(), roundId: id });
     }
-  }, [id, chainId, setFilters]);
+  }, [id, chainId]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.pathname);
-    }
-
+    if (roundsLoading) return;
     const get = async (roundId: Address) => {
       try {
         setIsPageLoading(true);
 
-        // setPageError({ value: false, message: "" });
+        // round data
         const data = rounds ? getRoundById(rounds, roundId) : undefined;
-        setRoundData(data);
 
-        if (!data) return;
-        setPageError({ value: false, message: "" });
-
-        const {
-          data: roundInfo,
-          error: roundInfoErr,
-          success: roundInfoSuccess,
-        } = await getRoundInfo(roundId);
-        if (!roundInfoSuccess) throw new Error(roundInfoErr);
-
-        setRoundInfo(roundInfo);
-
-        let applications:
-          | (ProjectApplication & { matchingData?: MatchingStatsData })[]
-          | undefined = await getProjectsApplications(roundId, chainId);
+        if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
+          throw new Error("No round metadata");
         const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
           (t) => t.address.toLowerCase() == data?.token.toLowerCase()
         )[0];
+
+        const tokenAmount = parseFloat(
+          ethers.utils.formatUnits(
+            data.matchAmount,
+            matchingFundPayoutToken.decimal
+          )
+        );
+        const rate = data.matchAmountUSD / tokenAmount;
+        const matchingPoolUSD =
+          data.metadata?.quadraticFundingConfig?.matchingFundsAvailable * rate;
+        setRoundData({ ...data, matchingPoolUSD, rate });
+        setPageError({ value: false, message: "" });
+
+        // applications data
+        let applications:
+          | (ProjectApplication & { matchingData?: MatchingStatsData })[]
+          | undefined = await getProjectsApplications(roundId, chainId);
+
+        if (!applications) throw new Error("No applications");
+
+        // matching data
+        const y = new ethers.providers.InfuraProvider(
+          chainId,
+          process.env.NEXT_PUBLIC_INFURA_API_KEY
+        );
         const matchingData = await fetchMatchingDistribution(
           roundId,
-          new ethers.providers.EtherscanProvider(chainId),
-          matchingFundPayoutToken
+          y,
+          matchingFundPayoutToken,
+          matchingPoolUSD
         );
         applications = applications?.map((app) => {
           const projectMatchingData = matchingData?.find(
@@ -126,8 +136,18 @@ const Home: NextPage = () => {
         });
         const sorted = sortByMatchAmount(applications || []);
         setApplications(sorted);
+
+        // ipfs round data
+        const {
+          data: roundInfo,
+          error: roundInfoErr,
+          success: roundInfoSuccess,
+        } = await getRoundInfo(roundId);
+        if (!roundInfoSuccess) throw new Error(roundInfoErr);
+
+        setRoundInfo(roundInfo);
       } catch (err) {
-        setPageError({ value: true, message: "An error occured." });
+        setPageError({ value: true, message: err + "An error occured." });
       } finally {
         setIsPageLoading(false);
       }
@@ -138,7 +158,7 @@ const Home: NextPage = () => {
           setIsPageLoading(false);
           setPageError({ value: true, message: "Grant not found" });
         };
-  }, [id, rounds, chainId]);
+  }, [id, rounds, chainId, roundsLoading]);
 
   const createPDF = useReactToPrint({
     content: () => reportTemplateRef.current,
@@ -208,7 +228,7 @@ const Home: NextPage = () => {
         </>
       ) : pageError.value || !roundData ? (
         <>
-          {/* <p>{pageError.message} </p> */}
+          {/* <p>{pageError.message || "err"} </p> */}
           <p>
             Grant not found.{" "}
             <Link href={`/${COMMUNITY_ROUND_ADDRESS}`} className="text-blue">
@@ -251,18 +271,9 @@ const Home: NextPage = () => {
             </div>
             <Stats
               round={roundData}
-              // totalContributionsAmount={
-              //   applications?.reduce(
-              //     (accumulator, currentValue) =>
-              //       accumulator + currentValue.votesArray.map(vote => vote.amount) || 0,
-              //     0
-              //   ) || 0
-              // }
               projectsAmount={
                 applications?.map(
-                  (application) =>
-                    application.amountUSD +
-                      (application.matchingData?.matchAmount || 0) || 0
+                  (application) => application.matchingData?.matchAmountUSD || 0
                 ) || []
               }
               totalCrowdfunded={
@@ -277,7 +288,8 @@ const Home: NextPage = () => {
               <GrantPlot
                 values={
                   applications?.map(
-                    (ap) => (ap.matchingData?.matchAmount || 0) + ap.amountUSD
+                    (ap) =>
+                      (ap.matchingData?.matchAmountUSD || 0) + ap.amountUSD
                   ) || []
                 }
                 labels={
@@ -364,7 +376,7 @@ const Home: NextPage = () => {
                                 scope="col"
                                 className="relative py-3 pl-3 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-black"
                               >
-                                DAI Match
+                                $ Match
                               </th>
                             </tr>
                           </thead>
@@ -390,7 +402,7 @@ const Home: NextPage = () => {
                                   $
                                   {formatAmount(
                                     (
-                                      proj.matchingData?.matchAmount || 0
+                                      proj.matchingData?.matchAmountUSD || 0
                                     ).toFixed(2)
                                   )}
                                 </td>

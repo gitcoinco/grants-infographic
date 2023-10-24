@@ -137,6 +137,8 @@ export interface Round {
   metaPtr: string;
   votes: number;
   uniqueContributors: number;
+  rate: number;
+  matchingPoolUSD: number;
 }
 
 export type GrantApplicationFormAnswer = {
@@ -253,6 +255,7 @@ export type MatchingStatsData = {
   status?: string;
   hash?: string;
   matchAmount: number;
+  matchAmountUSD: number;
 };
 
 export interface Program {

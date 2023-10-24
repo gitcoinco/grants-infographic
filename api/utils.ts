@@ -708,8 +708,7 @@ export const pinToIPFS = async (
 
 export const formatCurrency = (
   value: BigNumber,
-  decimal: number,
-  fraction?: number
+  decimal: number
 ) => {
   return parseFloat(ethers.utils.formatUnits(value.toString(), decimal));
 };
