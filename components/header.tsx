@@ -9,6 +9,7 @@ import { Round } from "../api/types";
 import { useRouter } from "next/router";
 import { Address } from "viem";
 import { getRoundsByChainId } from "../api/round";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Select, {
   components,
   OptionProps,
@@ -91,14 +92,14 @@ export default function Header() {
   };
 
   return (
-    <header className="flex justify-between p-6 sm:flex-row flex-col gap-2">
+    <header className="flex justify-between p-6 sm:flex-row flex-col gap-2 z-[100]">
       <Image src={gitcoinLogo} alt="gitcoin logo" width="89" height="30" />
       <div className="flex items-center gap-4 flex-wrap">
         <Select
           value={chains.find((chain) => chain.value == newFilters.chainId)}
           onChange={(option) => handleChainChange(option)}
           options={chains || []}
-          className="w-40"
+          className="w-40 z-[99]"
         />
 
         <Select
@@ -109,10 +110,10 @@ export default function Header() {
             (round) => round.value == newFilters.roundId
           )}
           placeholder="Select a round"
-          className="w-60"
+          className="w-60 z-[99]"
         />
       </div>
-      {/* <ConnectButton /> */}
+      <ConnectButton />
     </header>
   );
 }

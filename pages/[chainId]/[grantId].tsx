@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import { Address } from "wagmi";
+import { Address, useAccount, useSignMessage, useWalletClient } from "wagmi";
 import { useContext, useEffect, useRef, useState } from "react";
 import {
   fetchMatchingDistribution,
@@ -30,7 +30,6 @@ const pinataSDK = require("@pinata/sdk");
 const pinata = new pinataSDK({
   pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
 });
-// let GrantPlot = lazy(() => import("../components/grant-plot"));
 import dynamic from "next/dynamic";
 import {
   fetchFromIPFS,
@@ -45,15 +44,34 @@ import WysiwygRender from "../../components/wysiwygRender";
 import { ethers } from "ethers";
 import roundsContext from "../../contexts/roundsContext";
 import filtersContext from "../../contexts/filtersContext";
+import roundImplementationAbi from "../../api/abi/roundImplementation";
+
 const GrantPlot = dynamic(import("../../components/grant-plot"), {
   ssr: false,
 });
 
 const Home: NextPage = () => {
+  const { isConnected, address } = useAccount();
+
   const { rounds, roundsLoading } = useContext(roundsContext);
   const { setFilters } = useContext(filtersContext);
+  const [isRoundOperator, setIsRoundOperator] = useState(false);
+  const {
+    data: signData,
+    isError: isSignError,
+    isLoading: isSignLoading,
+    isSuccess: isSignSuccess,
+    signMessage,
+  } = useSignMessage({
+    message: "Prove ownership as round operator",
+  });
 
-  // const { address, isConnected } = useAccount();
+  useEffect(() => {
+    if (!signData && !isSignLoading && isRoundOperator && !isSignError) {
+      signMessage();
+    }
+  }, [signData, isRoundOperator, isSignLoading, isSignError, signMessage]);
+
   const [roundData, setRoundData] = useState<Round>();
   const [roundInfo, setRoundInfo] = useState<RoundInfo>();
   const [isUploading, setUploading] = useState(false);
@@ -88,7 +106,7 @@ const Home: NextPage = () => {
 
         // round data
         const data = rounds ? getRoundById(rounds, roundId) : undefined;
-
+        console.log(data);
         if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
           throw new Error("No round metadata");
         const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
@@ -115,13 +133,13 @@ const Home: NextPage = () => {
         if (!applications) throw new Error("No applications");
 
         // matching data
-        const y = new ethers.providers.InfuraProvider(
+        const signerOrProvider = new ethers.providers.InfuraProvider(
           chainId,
           process.env.NEXT_PUBLIC_INFURA_API_KEY
         );
         const matchingData = await fetchMatchingDistribution(
           roundId,
-          y,
+          signerOrProvider,
           matchingFundPayoutToken,
           matchingPoolUSD
         );
@@ -159,6 +177,27 @@ const Home: NextPage = () => {
           setPageError({ value: true, message: "Grant not found" });
         };
   }, [id, rounds, chainId, roundsLoading]);
+
+  useEffect(() => {
+    if (!address || !isConnected || !chainId) return;
+
+    const signerOrProvider = new ethers.providers.InfuraProvider(
+      chainId,
+      process.env.NEXT_PUBLIC_INFURA_API_KEY
+    );
+    const get = async () => {
+      const roundImplementation = new ethers.Contract(
+        id,
+        roundImplementationAbi,
+        signerOrProvider
+      );
+      const operatorRole = await roundImplementation.ROUND_OPERATOR_ROLE();
+
+      const hasRole = await roundImplementation.hasRole(operatorRole, address);
+      setIsRoundOperator(hasRole);
+    };
+    get();
+  }, [address, id, chainId]);
 
   const createPDF = useReactToPrint({
     content: () => reportTemplateRef.current,
@@ -302,7 +341,7 @@ const Home: NextPage = () => {
             <div className="max-w-xl  m-auto z-50">
               <h2 className="text-3xl text-blue mb-4 font-grad flex items-center gap-4">
                 Preamble{" "}
-                {!isEditorOpen && (
+                {isRoundOperator && isSignSuccess && !isEditorOpen && (
                   <span
                     className="text-sm text-green cursor-pointer "
                     onClick={() => setIsEditorOpen(true)}
@@ -318,7 +357,7 @@ const Home: NextPage = () => {
                 )}
               </h2>
 
-              {isEditorOpen ? (
+              {isEditorOpen && isRoundOperator && isSignSuccess ? (
                 <Editor
                   value={newRoundInfo.preamble}
                   onChange={(value: string) =>
