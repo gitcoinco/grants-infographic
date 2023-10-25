@@ -32,7 +32,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
     ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === "true" ? [goerli] : []),
   ],
   [
-    // alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
+    // alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY! }),
     publicProvider(),
   ]
 );
@@ -64,7 +64,9 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider chains={chains}>
-        <roundsContext.Provider value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}>
+        <roundsContext.Provider
+          value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}
+        >
           <filtersContext.Provider value={{ filters, setFilters }}>
             <Layout>
               <Component {...pageProps} />

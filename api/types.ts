@@ -96,19 +96,19 @@ export interface Round {
   /**
    * Unix timestamp of the start of the round
    */
-  roundStartTime: Date;
+  roundStartTime: string;
   /**
    * Unix timestamp of the end of the round
    */
-  roundEndTime: Date;
+  roundEndTime: string;
   /**
    * Unix timestamp of when grants can apply to a round
    */
-  applicationsStartTime: Date;
+  applicationsStartTime: string;
   /**
    * Unix timestamp after which grants cannot apply to a round
    */
-  applicationsEndTime: Date;
+  applicationsEndTime: string;
   /**
    * Contract address of the token used to payout match amounts at the end of a round
    */
