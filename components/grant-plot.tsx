@@ -14,7 +14,6 @@ export default function GrantPlot({
 
   const colors = Array(20)
     .fill([
-      "#373EE8",
       "#F17A4C",
       "#FADBCF80",
       "#441151",
