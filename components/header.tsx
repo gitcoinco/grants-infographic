@@ -3,7 +3,7 @@ import gitcoinLogo from "/assets/gitcoin-logo.svg";
 import heroBg from "/assets/hero-bg.svg";
 import Image from "next/image";
 import filtersContext from "../contexts/filtersContext";
-import { CHAINS } from "../api/utils";
+import { CHAINS, isTestnet } from "../api/utils";
 import roundsContext from "../contexts/roundsContext";
 import { Round } from "../api/types";
 import { useRouter } from "next/router";
@@ -17,6 +17,7 @@ import Select, {
   Props as SelectProps,
   SingleValue,
 } from "react-select";
+import dayjs from "dayjs";
 
 type OptionType = {
   value: string;
@@ -30,12 +31,14 @@ export default function Header() {
   const [newFilters, setNewFilters] = useState(filters);
   const router = useRouter();
   const chains: OptionType[] =
-    Object.values(CHAINS).map((chain) => {
-      return {
-        value: `${chain?.id}` || "1",
-        label: chain?.name || "",
-      };
-    }) || [];
+    Object.values(CHAINS)
+      .filter((chain) => !isTestnet(chain?.id!))
+      .map((chain) => {
+        return {
+          value: `${chain?.id}` || "1",
+          label: chain?.name || "",
+        };
+      }) || [];
 
   const [roundOptions, setRoundOptions] = useState<OptionType[]>([]);
   const [allRounds, setAllRounds] = useState<Round[]>();
@@ -47,7 +50,17 @@ export default function Header() {
         Number(chainId)
       );
       if (!success) throw new Error(error);
-      return data;
+     
+      const filteredData = data?.filter(
+        (round) =>
+          !!round.metadata?.name &&
+          !!round.metadata.quadraticFundingConfig?.matchingFundsAvailable &&
+          !!round.votes &&
+          !round.metadata?.name.toLowerCase().includes("test")  &&
+          round.amountUSD > 50
+          // && dayjs.unix(Number(round.roundEndTime)).isAfter(dayjs(minDate))
+      );
+      return filteredData;
     } catch (err) {
       console.log(err);
     }

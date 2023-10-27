@@ -77,6 +77,19 @@ export function useDebugMode(): boolean {
   );
 }
 
+export const isTestnet = (chainId: number) => {
+  const testnetIds = [
+    ChainId.FANTOM_TESTNET_CHAIN_ID,
+    ChainId.PGN_TESTNET,
+    ChainId.ARBITRUM_GOERLI,
+    ChainId.GOERLI_CHAIN_ID,
+    ChainId.FUJI,
+    ChainId.POLYGON_MUMBAI
+  ];
+
+  return testnetIds.includes(chainId);
+};
+
 export enum ChainId {
   //
   MAINNET = 1,
@@ -135,7 +148,7 @@ export const CHAINS: Record<ChainId, Program["chain"]> = {
     logo: "/logos/pgn-logo.svg",
   },
   [ChainId.PGN]: {
-    id: ChainId.PGN_TESTNET,
+    id: ChainId.PGN,
     name: "PGN",
     logo: "/logos/pgn-logo.svg",
   },
@@ -706,10 +719,7 @@ export const pinToIPFS = async (
   });
 };
 
-export const formatCurrency = (
-  value: BigNumber,
-  decimal: number
-) => {
+export const formatCurrency = (value: BigNumber, decimal: number) => {
   return parseFloat(ethers.utils.formatUnits(value.toString(), decimal));
 };
 

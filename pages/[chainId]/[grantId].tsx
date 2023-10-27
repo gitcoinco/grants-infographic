@@ -165,6 +165,7 @@ const Home: NextPage = () => {
 
         setRoundInfo(roundInfo);
       } catch (err) {
+        console.log(err);
         setPageError({ value: true, message: err + "An error occured." });
       } finally {
         setIsPageLoading(false);
@@ -276,7 +277,7 @@ const Home: NextPage = () => {
           </p>
         </>
       ) : (
-        <div id="report" ref={reportTemplateRef} className="max-w-screen">
+        <div id="report" ref={reportTemplateRef} className="max-w-screen z-[100]">
           <div className="flex flex-col gap-16 max-w-screen">
             <div className="flex justify-center mt-6">
               <div className="">
@@ -333,14 +334,19 @@ const Home: NextPage = () => {
                 }
                 labels={
                   applications?.map(
-                    (ap) => ap.metadata.application.project.title
+                    (ap) =>
+                      `${ap.metadata.application.project.title.slice(0, 20)}${
+                        ap.metadata.application.project.title.length >= 20
+                          ? "..."
+                          : ""
+                      }`
                   ) || []
                 }
               />
             </Stats>
             <div className="max-w-xl  m-auto z-50">
               <h2 className="text-3xl text-blue mb-4 font-grad flex items-center gap-4">
-                Preamble{" "}
+                A note from your round operator{" "}
                 {isRoundOperator && isSignSuccess && !isEditorOpen && (
                   <span
                     className="text-sm text-green cursor-pointer "
@@ -382,7 +388,7 @@ const Home: NextPage = () => {
                 </h2>
                 <div className="overflow-x-auto">
                   <div className="mt-8 flow-root">
-                    <div className="-mx-2 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                    <div className="overflow-x-auto">
                       <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
                         <table className="min-w-full">
                           <thead>
@@ -429,7 +435,15 @@ const Home: NextPage = () => {
                                   {index + 1}
                                 </td>
                                 <td className="whitespace-prewrap min-w-[200px] px-3 py-3 text-sm">
-                                  {proj.metadata.application.project.title}
+                                  {proj.metadata.application.project.title.slice(
+                                    0,
+                                    20
+                                  )}
+
+                                  {proj.metadata.application.project.title
+                                    .length >= 20
+                                    ? "..."
+                                    : ""}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-3 text-sm text-right">
                                   {formatAmount(proj.votes, true)}
@@ -465,6 +479,9 @@ const Home: NextPage = () => {
                   <ProjectCard
                     link={proj.metadata.application.project?.projectGithub}
                     name={proj.metadata.application.project?.title}
+                    contributions={proj.votes}
+                    matchAmount={proj.matchingData?.matchAmountUSD}
+                    crowdfundedAmount={proj.amountUSD}
                     description={proj.metadata.application.project?.description}
                     imgSrc={`https://ipfs.io/ipfs/${proj.metadata.application.project?.logoImg}`}
                   />
