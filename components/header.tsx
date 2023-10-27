@@ -56,7 +56,8 @@ export default function Header() {
           !!round.metadata?.name &&
           !!round.metadata.quadraticFundingConfig?.matchingFundsAvailable &&
           !!round.votes &&
-          !round.metadata?.name.toLowerCase().includes("test") 
+          !round.metadata?.name.toLowerCase().includes("test")  &&
+          round.amountUSD > 50
           // && dayjs.unix(Number(round.roundEndTime)).isAfter(dayjs(minDate))
       );
       return filteredData;
