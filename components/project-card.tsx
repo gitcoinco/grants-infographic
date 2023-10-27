@@ -1,16 +1,23 @@
 import Image from "next/image";
 import { useState } from "react";
+import { formatAmount } from "../api/utils";
 
 export default function ProjectCard({
   imgSrc,
   name,
   description,
   link,
+  matchAmount,
+  contributions,
+  crowdfundedAmount
 }: {
   imgSrc: string;
   name: string;
   description: string;
   link?: string;
+  matchAmount?: number;
+  contributions: number;
+  crowdfundedAmount?: number;
 }) {
   const [isSliced, setIsSliced] = useState(true);
   const descriptionArray = description.split("\n");
@@ -29,15 +36,26 @@ export default function ProjectCard({
             />
           </div>
         </div>
-        <h3 className="text-blue text-md sm:text-2xl font-grad hover:underline">
-          {link ? (
-            <a href={link} target="_blank">
-              {name}
-            </a>
-          ) : (
-            <span>{name}</span>
-          )}
-        </h3>
+        <div>
+          <h3 className="text-blue text-md sm:text-2xl font-grad hover:underline">
+            {link ? (
+              <a href={link} target="_blank">
+                {name}{" "}
+              </a>
+            ) : (
+              <span>{name}</span>
+            )}
+          </h3>
+          <h5 className="text-dark text-xs sm:text-base font-grad hover:underline mt-2">
+            <pre>
+              {formatAmount(contributions, true)} contributions
+              <br />${formatAmount((crowdfundedAmount || 0)?.toFixed(2))}{" "}
+              crowdfunded
+              <br />${formatAmount((matchAmount || 0).toFixed(2))} matching
+              funded
+            </pre>
+          </h5>
+        </div>
       </div>
 
       <p className="max-w-[90vw]">
@@ -49,7 +67,12 @@ export default function ProjectCard({
               key={index}
               className={`
                 ${
-                  index !== (isSliced ? description.slice(0, 500).split("\n").length - 1 : descriptionArray.length - 1) ? "block mb-3 " : ""
+                  index !==
+                  (isSliced
+                    ? description.slice(0, 500).split("\n").length - 1
+                    : descriptionArray.length - 1)
+                    ? "block mb-3 "
+                    : ""
                 } whitespace-pre-line text-justify 2xl:text-base text-sm break-words`}
             >
               {item}
