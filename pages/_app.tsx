@@ -21,6 +21,7 @@ import { createContext, useState } from "react";
 import filtersContext, { Filters } from "../contexts/filtersContext";
 import { Round } from "../api/types";
 import roundsContext from "../contexts/roundsContext";
+import Script from "next/script";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [
@@ -62,19 +63,40 @@ function MyApp({ Component, pageProps }: AppProps) {
     setFilters(filters);
   };
   return (
-    <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider chains={chains}>
-        <roundsContext.Provider
-          value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}
-        >
-          <filtersContext.Provider value={{ filters, setFilters }}>
-            <Layout>
-              <Component {...pageProps} />
-            </Layout>
-          </filtersContext.Provider>
-        </roundsContext.Provider>
-      </RainbowKitProvider>
-    </WagmiConfig>
+    <>
+      {process.env.NODE_ENV === "production" && (
+        <>
+          <Script
+            strategy="afterInteractive"
+            src={`https://www.googletagmanager.com/gtag/js?id=G-JSM7V1YTCB`}
+          />
+
+          <Script id="gtag" strategy="afterInteractive">
+            {`
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', 'G-JSM7V1YTCB', {
+                    page_path: window.location.pathname,
+                    });
+                `}
+          </Script>
+        </>
+      )}
+      <WagmiConfig config={wagmiConfig}>
+        <RainbowKitProvider chains={chains}>
+          <roundsContext.Provider
+            value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}
+          >
+            <filtersContext.Provider value={{ filters, setFilters }}>
+              <Layout>
+                <Component {...pageProps} />
+              </Layout>
+            </filtersContext.Provider>
+          </roundsContext.Provider>
+        </RainbowKitProvider>
+      </WagmiConfig>
+    </>
   );
 }
 
