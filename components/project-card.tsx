@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { formatAmount } from "../api/utils";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function ProjectCard({
   imgSrc,
@@ -9,7 +11,7 @@ export default function ProjectCard({
   link,
   matchAmount,
   contributions,
-  crowdfundedAmount
+  crowdfundedAmount,
 }: {
   imgSrc: string;
   name: string;
@@ -58,26 +60,10 @@ export default function ProjectCard({
         </div>
       </div>
 
-      <p className="max-w-[90vw]">
-        {description
-          .slice(0, isSliced ? 500 : description.length)
-          .split("\n")
-          .map((item, index) => (
-            <span
-              key={index}
-              className={`
-                ${
-                  index !==
-                  (isSliced
-                    ? description.slice(0, 500).split("\n").length - 1
-                    : descriptionArray.length - 1)
-                    ? "block mb-3 "
-                    : ""
-                } whitespace-pre-line text-justify 2xl:text-base text-sm break-words`}
-            >
-              {item}
-            </span>
-          ))}
+      <div className="max-w-[90vw] prose">
+        <Markdown remarkPlugins={[remarkGfm]}>
+          {description.slice(0, isSliced ? 500 : description.length)}
+        </Markdown>
 
         {isSliced && description.length >= 500 && <span>...</span>}
 
@@ -89,7 +75,7 @@ export default function ProjectCard({
             {isSliced ? " View more" : " View less"}
           </a>
         )}
-      </p>
+      </div>
     </div>
   );
 }
