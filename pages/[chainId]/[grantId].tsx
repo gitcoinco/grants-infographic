@@ -248,9 +248,9 @@ const Home: NextPage = () => {
 
   const defaultRoundInfo = {
     preamble:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque id risus a est condimentum placerat at a massa. Nunc et metus magna. Donec a finibus nulla. Donec porta urna sit amet eros cursus pulvinar.",
+      "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
     closing:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque id risus a est condimentum placerat at a massa. Nunc et metus magna. Donec a finibus nulla. Donec porta urna sit amet eros cursus pulvinar.",
+      "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
     projects: [],
   };
   const [newRoundInfo, setNewRoundInfo] = useState<RoundInfo>(defaultRoundInfo);
@@ -261,9 +261,9 @@ const Home: NextPage = () => {
     } else {
       setNewRoundInfo({
         preamble:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque id risus a est condimentum placerat at a massa. Nunc et metus magna. Donec a finibus nulla. Donec porta urna sit amet eros cursus pulvinar.",
+          "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
         closing:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque id risus a est condimentum placerat at a massa. Nunc et metus magna. Donec a finibus nulla. Donec porta urna sit amet eros cursus pulvinar.",
+          "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
         projects:
           applications?.slice(0, 10)?.map((ap) => {
             return {
