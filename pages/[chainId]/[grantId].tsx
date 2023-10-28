@@ -32,6 +32,7 @@ const pinata = new pinataSDK({
 });
 import dynamic from "next/dynamic";
 import {
+  ChainId,
   fetchFromIPFS,
   formatAmount,
   getRoundById,
@@ -133,10 +134,22 @@ const Home: NextPage = () => {
         if (!applications) throw new Error("No applications");
 
         // matching data
-        const signerOrProvider = new ethers.providers.InfuraProvider(
-          chainId,
-          process.env.NEXT_PUBLIC_INFURA_API_KEY
-        );
+        const signerOrProvider =
+          chainId == ChainId.PGN
+            ? new ethers.providers.JsonRpcProvider(
+                "https://rpc.publicgoods.network",
+                chainId
+              )
+            : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
+            ? new ethers.providers.JsonRpcProvider(
+                "https://rpcapi.fantom.network/",
+                chainId
+              )
+            : new ethers.providers.InfuraProvider(
+                chainId,
+                process.env.NEXT_PUBLIC_INFURA_API_KEY
+              );
+
         const matchingData = await fetchMatchingDistribution(
           roundId,
           signerOrProvider,
@@ -182,10 +195,21 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (!address || !isConnected || !chainId) return;
 
-    const signerOrProvider = new ethers.providers.InfuraProvider(
-      chainId,
-      process.env.NEXT_PUBLIC_INFURA_API_KEY
-    );
+    const signerOrProvider =
+      chainId == ChainId.PGN
+        ? new ethers.providers.JsonRpcProvider(
+            "https://rpc.publicgoods.network",
+            chainId
+          )
+        : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
+        ? new ethers.providers.JsonRpcProvider(
+            "https://rpcapi.fantom.network/",
+            chainId
+          )
+        : new ethers.providers.InfuraProvider(
+            chainId,
+            process.env.NEXT_PUBLIC_INFURA_API_KEY
+          );
     const get = async () => {
       const roundImplementation = new ethers.Contract(
         id,
@@ -261,9 +285,9 @@ const Home: NextPage = () => {
         <>
           <p>
             Grant not found.{" "}
-            <Link href={`/${COMMUNITY_ROUND_ADDRESS}`} className="text-blue">
+            {/* <Link href={`/${COMMUNITY_ROUND_ADDRESS}`} className="text-blue">
               Here is the latest grant
-            </Link>{" "}
+            </Link>{" "} */}
           </p>
         </>
       ) : pageError.value || !roundData ? (
@@ -271,13 +295,17 @@ const Home: NextPage = () => {
           {/* <p>{pageError.message || "err"} </p> */}
           <p>
             Grant not found.{" "}
-            <Link href={`/${COMMUNITY_ROUND_ADDRESS}`} className="text-blue">
+            {/* <Link href={`/${COMMUNITY_ROUND_ADDRESS}`} className="text-blue">
               Here is the latest grant
-            </Link>{" "}
+            </Link>{" "} */}
           </p>
         </>
       ) : (
-        <div id="report" ref={reportTemplateRef} className="max-w-screen z-[100]">
+        <div
+          id="report"
+          ref={reportTemplateRef}
+          className="max-w-screen z-[100]"
+        >
           <div className="flex flex-col gap-16 max-w-screen">
             <div className="flex justify-center mt-6">
               <div className="">
@@ -299,6 +327,13 @@ const Home: NextPage = () => {
                     PDF
                   </button>
                 </div>
+                {!!applications?.length &&
+                  !applications[0].matchingData?.matchAmountUSD && (
+                    <h5 className="text-lg text-blue">
+                      Note that this round&apos;s matching data is not finalized
+                      yet and the graph is displaying only crowdfunded amount
+                    </h5>
+                  )}
                 {/* <h2 className="text-blue mb-4 text-3xl font-grad">
                   Thank You!
                 </h2>
@@ -381,114 +416,134 @@ const Home: NextPage = () => {
               )}
             </div>
 
-            <Card>
-              <div className="max-w-[75vw]">
-                <h2 className="text-blue text-3xl mb-6 text-center font-grad font-normal">
-                  Leaderboard
-                </h2>
-                <div className="overflow-x-auto">
-                  <div className="mt-8 flow-root">
-                    <div className="overflow-x-auto">
-                      <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                        <table className="min-w-full">
-                          <thead>
-                            <tr>
-                              <th
-                                scope="col"
-                                className="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
-                              >
-                                Rank
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
-                              >
-                                Project name
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
-                              >
-                                Contributions
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
-                              >
-                                $ Contributed
-                              </th>
-                              <th
-                                scope="col"
-                                className="relative py-3 pl-3 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-black"
-                              >
-                                $ Match
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="">
-                            {applications?.slice(0, 10)?.map((proj, index) => (
-                              <tr
-                                key={proj.id}
-                                className="even:bg-light-orange"
-                              >
-                                <td className="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium">
-                                  {index + 1}
-                                </td>
-                                <td className="whitespace-prewrap min-w-[200px] px-3 py-3 text-sm">
-                                  {proj.metadata.application.project.title.slice(
-                                    0,
-                                    20
-                                  )}
+            {!!applications?.length &&
+              applications[0].matchingData?.matchAmountUSD && (
+                <div className="flex flex-col gap-16 max-w-screen">
+                  <Card>
+                    <div className="max-w-[75vw]">
+                      <h2 className="text-blue text-3xl mb-6 text-center font-grad font-normal">
+                        Leaderboard
+                      </h2>
+                      <div className="overflow-x-auto">
+                        <div className="mt-8 flow-root">
+                          <div className="overflow-x-auto">
+                            <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                              <table className="min-w-full">
+                                <thead>
+                                  <tr>
+                                    <th
+                                      scope="col"
+                                      className="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
+                                    >
+                                      Rank
+                                    </th>
+                                    <th
+                                      scope="col"
+                                      className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
+                                    >
+                                      Project name
+                                    </th>
+                                    <th
+                                      scope="col"
+                                      className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
+                                    >
+                                      Contributions
+                                    </th>
+                                    <th
+                                      scope="col"
+                                      className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
+                                    >
+                                      $ Contributed
+                                    </th>
+                                    <th
+                                      scope="col"
+                                      className="relative py-3 pl-3 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-black"
+                                    >
+                                      $ Match
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="">
+                                  {applications
+                                    ?.slice(0, 10)
+                                    ?.map((proj, index) => (
+                                      <tr
+                                        key={proj.id}
+                                        className="even:bg-light-orange"
+                                      >
+                                        <td className="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium">
+                                          {index + 1}
+                                        </td>
+                                        <td className="whitespace-prewrap min-w-[200px] px-3 py-3 text-sm">
+                                          {proj.metadata.application.project.title.slice(
+                                            0,
+                                            20
+                                          )}
 
-                                  {proj.metadata.application.project.title
-                                    .length >= 20
-                                    ? "..."
-                                    : ""}
-                                </td>
-                                <td className="whitespace-nowrap px-3 py-3 text-sm text-right">
-                                  {formatAmount(proj.votes, true)}
-                                </td>
-                                <td className="whitespace-nowrap px-3 py-3 text-sm text-right">
-                                  ${formatAmount(proj.amountUSD?.toFixed(2))}
-                                </td>
-                                <td className="relative whitespace-nowrap py-3 pl-3 pr-4 text-right text-sm font-medium">
-                                  $
-                                  {formatAmount(
-                                    (
-                                      proj.matchingData?.matchAmountUSD || 0
-                                    ).toFixed(2)
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                          {proj.metadata.application.project
+                                            .title.length >= 20
+                                            ? "..."
+                                            : ""}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-3 text-sm text-right">
+                                          {formatAmount(proj.votes, true)}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-3 text-sm text-right">
+                                          $
+                                          {formatAmount(
+                                            proj.amountUSD?.toFixed(2)
+                                          )}
+                                        </td>
+                                        <td className="relative whitespace-nowrap py-3 pl-3 pr-4 text-right text-sm font-medium">
+                                          $
+                                          {formatAmount(
+                                            (
+                                              proj.matchingData
+                                                ?.matchAmountUSD || 0
+                                            ).toFixed(2)
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                  </Card>
+
+                  <div className="flex flex-col gap-8 max-w-3xl m-auto">
+                    {applications?.slice(0, 10).map((proj) => (
+                      <div
+                        key={proj.id}
+                        className="pt-8 flex flex-col items-center gap-8"
+                      >
+                        <ProjectCard
+                          link={
+                            proj.metadata.application.project?.projectGithub
+                          }
+                          name={proj.metadata.application.project?.title}
+                          contributions={proj.votes}
+                          matchAmount={proj.matchingData?.matchAmountUSD}
+                          crowdfundedAmount={proj.amountUSD}
+                          description={
+                            proj.metadata.application.project?.description
+                          }
+                          imgSrc={`https://ipfs.io/ipfs/${proj.metadata.application.project?.logoImg}`}
+                        />
+                        <Image
+                          src={projectsDivider}
+                          alt=""
+                          width="138"
+                          height="83"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            </Card>
-
-            <div className="flex flex-col gap-8 max-w-3xl m-auto">
-              {applications?.slice(0, 10).map((proj) => (
-                <div
-                  key={proj.id}
-                  className="pt-8 flex flex-col items-center gap-8"
-                >
-                  <ProjectCard
-                    link={proj.metadata.application.project?.projectGithub}
-                    name={proj.metadata.application.project?.title}
-                    contributions={proj.votes}
-                    matchAmount={proj.matchingData?.matchAmountUSD}
-                    crowdfundedAmount={proj.amountUSD}
-                    description={proj.metadata.application.project?.description}
-                    imgSrc={`https://ipfs.io/ipfs/${proj.metadata.application.project?.logoImg}`}
-                  />
-                  <Image src={projectsDivider} alt="" width="138" height="83" />
-                </div>
-              ))}
-            </div>
+              )}
           </div>
         </div>
       )}
