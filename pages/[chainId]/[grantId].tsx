@@ -294,7 +294,7 @@ const Home: NextPage = () => {
         : setNewRoundInfo(roundInfo);
     } else {
       setNewRoundInfo({
-        tweetURLs: "",
+        tweetURLs: defaultTweetURL,
         preamble:
           "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
         closing:
