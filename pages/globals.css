@@ -41,3 +41,19 @@ body {
   text-align: justify;
 }
 
+input, textarea {
+  background-color: #FFFDED;
+  border: 1px solid #769883;
+  border-radius: 0.65rem;
+  padding: 0.25rem 0.75rem;
+}
+input:focus, textarea:focus {
+  outline: 1px solid #769883;
+  border: 1px solid #769883;
+
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
