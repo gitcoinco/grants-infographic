@@ -233,6 +233,7 @@ export type PayoutToken = {
 };
 
 export type RoundInfo = {
+  tweetURLs: string;
   preamble: string;
   closing: string;
   projects: {

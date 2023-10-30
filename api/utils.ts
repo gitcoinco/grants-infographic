@@ -16,6 +16,12 @@ const pinata = new pinataSDK({
   pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
 });
 
+export const defaultTweetURL =
+  "https://twitter.com/umarkhaneth/status/1718319104178753678";
+  
+export const twitterRegex: RegExp =
+  /^https?:\/\/(www.|m.|mobile.)?twitter|x\.com\/(?:#!\/)?\w+\/status?\/\d+/;
+
 export const sortByMatchAmount = (
   arr: (ProjectApplication & { matchingData?: MatchingStatsData })[] | undefined
 ) => {
@@ -84,7 +90,7 @@ export const isTestnet = (chainId: number) => {
     ChainId.ARBITRUM_GOERLI,
     ChainId.GOERLI_CHAIN_ID,
     ChainId.FUJI,
-    ChainId.POLYGON_MUMBAI
+    ChainId.POLYGON_MUMBAI,
   ];
 
   return testnetIds.includes(chainId);

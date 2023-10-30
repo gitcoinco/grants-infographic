@@ -60,7 +60,7 @@ export default function ProjectCard({
         </div>
       </div>
 
-      <div className="max-w-[90vw] prose">
+      <div className="max-w-[90vw] prose break-words">
         <Markdown remarkPlugins={[remarkGfm]}>
           {description.slice(0, isSliced ? 500 : description.length)}
         </Markdown>
