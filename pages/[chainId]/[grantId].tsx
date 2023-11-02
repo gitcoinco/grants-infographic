@@ -314,20 +314,18 @@ const Home: NextPage = () => {
 
   const getTweetId = (tweetUrl: string) => {
     if (!tweetUrl?.length) return "";
-    const tweetId =  tweetUrl.split("/").pop()?.split("?")[0];
-    return tweetId || '';
+    const tweetId = tweetUrl.split("/").pop()?.split("?")[0];
+    return tweetId || "";
   };
-
 
   return (
     <>
       <Head>
         <title>
           {roundData?.metadata?.name
-            ? `${roundData.metadata.name} - Report Card`
+            ? `${roundData.metadata.name} - Round Report Card`
             : "Gitcoin Round Report Cards"}
         </title>
-        {/* <meta name="description"></meta> */}
       </Head>
       <div>
         {isPageLoading ? (
