@@ -20,6 +20,14 @@ export default function Document() {
           name="twitter:image"
           content="https://reportcards.gitcoin.co/report-cards-twitter-card.jpg"
         />
+
+        <meta property="og:title" content="Gitcoin Round Report Cards" />
+        <meta property="og:url" content="https://reportcards.gitcoin.co/" />
+        <meta
+          property="og:image"
+          content="https://reportcards.gitcoin.co/report-cards-twitter-card.jpg"
+        />
+        <meta property="og:description" content={PAGE_DESCRIPTION} />
       </Head>
       <body>
         <Main />
