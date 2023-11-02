@@ -16,7 +16,10 @@ export default function Document() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Gitcoin Round Report Cards" />
         <meta name="twitter:description" content={PAGE_DESCRIPTION} />
-        <meta name="twitter:image" content="/report-cards-twitter-card.jpg" />
+        <meta
+          name="twitter:image"
+          content="https://reportcards.gitcoin.co/report-cards-twitter-card.jpg"
+        />
       </Head>
       <body>
         <Main />
