@@ -49,6 +49,7 @@ import roundsContext from "../../contexts/roundsContext";
 import filtersContext from "../../contexts/filtersContext";
 import roundImplementationAbi from "../../api/abi/roundImplementation";
 import Head from "next/head";
+import { markdownImgRegex } from "../../constants";
 
 const GrantPlot = dynamic(import("../../components/grant-plot"), {
   ssr: false,
@@ -646,9 +647,9 @@ const Home: NextPage = () => {
                             contributions={proj.votes}
                             matchAmount={proj.matchingData?.matchAmountUSD}
                             crowdfundedAmount={proj.amountUSD}
-                            description={
-                              proj.metadata.application.project?.description
-                            }
+                            description={proj.metadata.application.project?.description.replaceAll(
+                              markdownImgRegex, ''
+                            )}
                             imgSrc={`https://ipfs.io/ipfs/${proj.metadata.application.project?.logoImg}`}
                           />
                           <Image
