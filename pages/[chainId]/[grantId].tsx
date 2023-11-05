@@ -330,7 +330,7 @@ const Home: NextPage = () => {
       </Head>
       <div>
         {isPageLoading ? (
-          <p>Loading...</p>
+          <Loading />
         ) : !id ? (
           <>
             <p>
@@ -648,7 +648,8 @@ const Home: NextPage = () => {
                             matchAmount={proj.matchingData?.matchAmountUSD}
                             crowdfundedAmount={proj.amountUSD}
                             description={proj.metadata.application.project?.description.replaceAll(
-                              markdownImgRegex, ''
+                              markdownImgRegex,
+                              ""
                             )}
                             imgSrc={`https://ipfs.io/ipfs/${proj.metadata.application.project?.logoImg}`}
                           />
@@ -668,6 +669,14 @@ const Home: NextPage = () => {
         )}
       </div>
     </>
+  );
+};
+
+const Loading = () => {
+  return (
+    <div className="min-h-[95vh] flex justify-center ">
+      <p className="text-center mt-4 text-semibold">Loading...</p>
+    </div>
   );
 };
 
