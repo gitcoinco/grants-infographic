@@ -4,6 +4,7 @@ import gitcoinLogo from '/assets/gitcoin-logo.svg';
 import heroBg from '/assets/hero-bg.svg';
 import Image from 'next/image';
 import Header from './header';
+import Footer from './footer';
 
 export default function Layout({children}: {children: ReactNode}) {
   return (
@@ -14,7 +15,8 @@ export default function Layout({children}: {children: ReactNode}) {
         <Header />
       </div>
       <main className='p-6'>{children}</main>
-      <footer className='p-6'></footer>
+      <Footer />
+    
       </div>
     </>
   )
