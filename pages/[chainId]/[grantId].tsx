@@ -1,17 +1,15 @@
 import type { NextPage } from "next";
-import { Address, useAccount, useSignMessage, useWalletClient } from "wagmi";
+import { Address, useAccount, useSignMessage } from "wagmi";
 import { useContext, useEffect, useRef, useState } from "react";
 import TweetEmbed from "react-tweet-embed";
 import {
   fetchMatchingDistribution,
   getProjectsApplications,
-  getRoundContributors,
   getRoundInfo,
 } from "../../api/round";
 import {
   MatchingStatsData,
   PayoutToken,
-  Project,
   ProjectApplication,
   Round,
   RoundInfo,
@@ -22,34 +20,32 @@ import { useReactToPrint } from "react-to-print";
 import ProjectCard from "../../components/project-card";
 import Stats from "../../components/stats";
 import Card from "../../components/card";
-import Link from "next/link";
 import projectsDivider from "/assets/projects-divider.svg";
 import downloadIcon from "../../assets/download-icon.svg";
 import editIcon from "../../assets/edit-icon.svg";
-import { COMMUNITY_ROUND_ADDRESS } from "../../constants/community-round";
-const pinataSDK = require("@pinata/sdk");
-const pinata = new pinataSDK({
-  pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
-});
 import dynamic from "next/dynamic";
 import {
   ChainId,
   defaultTweetURL,
-  fetchFromIPFS,
   formatAmount,
+  getGranteeLink,
   getRoundById,
   payoutTokens,
   pinToIPFS,
   sortByMatchAmount,
 } from "../../api/utils";
 import Editor from "../../components/editor";
-import WysiwygRender from "../../components/wysiwygRender";
 import { ethers } from "ethers";
 import roundsContext from "../../contexts/roundsContext";
 import filtersContext from "../../contexts/filtersContext";
 import roundImplementationAbi from "../../api/abi/roundImplementation";
 import Head from "next/head";
 import { markdownImgRegex } from "../../constants";
+import EditIcon from "../../components/edit-icon";
+const pinataSDK = require("@pinata/sdk");
+const pinata = new pinataSDK({
+  pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
+});
 
 const GrantPlot = dynamic(import("../../components/grant-plot"), {
   ssr: false,
@@ -273,44 +269,45 @@ const Home: NextPage = () => {
   const handleCancelEditor = (isTweetsEditor?: boolean) => {
     isTweetsEditor ? setIsTweetsEditorOpen(false) : setIsEditorOpen(false);
 
-    setNewRoundInfo(
-      roundInfo
-        ? roundInfo.tweetURLs
-          ? roundInfo
-          : {
-              ...roundInfo,
-              tweetURLs: defaultTweetURL,
-            }
-        : defaultRoundInfo
-    );
+    const defaultProjects =
+      applications?.slice(0, 10)?.map((ap) => {
+        return {
+          id: ap.projectId,
+          description: ap.metadata.application.project.description,
+        };
+      }) || [];
+    const defaultText =
+      "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.";
+
+    setNewRoundInfo({
+      preamble: roundInfo?.preamble || defaultText,
+      closing: roundInfo?.closing || defaultText,
+      tweetURLs: roundInfo?.tweetURLs || defaultTweetURL,
+      projects: roundInfo?.projects?.length
+        ? roundInfo.projects
+        : defaultProjects,
+    });
   };
 
   useEffect(() => {
-    if (roundInfo) {
-      !roundInfo.tweetURLs
-        ? setNewRoundInfo({
-            ...roundInfo,
-            tweetURLs: defaultTweetURL,
-          })
-        : setNewRoundInfo(roundInfo);
-    } else {
-      setNewRoundInfo({
-        tweetURLs: defaultTweetURL,
-        preamble:
-          "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
-        closing:
-          "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
-        projects:
-          applications?.slice(0, 10)?.map((ap) => {
-            return {
-              id: ap.projectId,
-              description: ap.metadata.application.project.description,
-            };
-          }) || [],
-      });
+    const defaultProjects =
+      applications?.slice(0, 10)?.map((ap) => {
+        return {
+          id: ap.projectId,
+          description: ap.metadata.application.project.description,
+        };
+      }) || [];
+    const defaultText =
+      "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.";
 
-      const x = JSON.stringify(newRoundInfo, undefined, 2);
-    }
+    setNewRoundInfo({
+      preamble: roundInfo?.preamble || defaultText,
+      closing: roundInfo?.closing || defaultText,
+      tweetURLs: roundInfo?.tweetURLs || defaultTweetURL,
+      projects: roundInfo?.projects?.length
+        ? roundInfo.projects
+        : defaultProjects,
+    });
   }, [roundInfo, applications]);
 
   const getTweetId = (tweetUrl: string) => {
@@ -333,22 +330,11 @@ const Home: NextPage = () => {
           <Loading />
         ) : !id ? (
           <>
-            <p>
-              Grant not found.{" "}
-              {/* <Link href={`/${COMMUNITY_ROUND_ADDRESS}`} className="text-blue">
-              Here is the latest grant
-            </Link>{" "} */}
-            </p>
+            <NotFound />
           </>
         ) : pageError.value || !roundData ? (
           <>
-            {/* <p>{pageError.message || "err"} </p> */}
-            <p>
-              Grant not found.{" "}
-              {/* <Link href={`/${COMMUNITY_ROUND_ADDRESS}`} className="text-blue">
-              Here is the latest grant
-            </Link>{" "} */}
-            </p>
+            <NotFound />
           </>
         ) : (
           <div
@@ -443,19 +429,14 @@ const Home: NextPage = () => {
                       className="text-sm text-green cursor-pointer "
                       onClick={() => setIsEditorOpen(true)}
                     >
-                      <Image
-                        src={editIcon}
-                        width="24"
-                        height="24"
-                        alt="edit icon"
-                        className="text-green hover:text-blue transition-all group-hover:translate-y-0.5"
-                      />
+                      <EditIcon />
                     </span>
                   )}
                 </h2>
 
                 {isEditorOpen && isRoundOperator && isSignSuccess ? (
                   <Editor
+                    name="preamble"
                     value={newRoundInfo.preamble}
                     onCancel={() => handleCancelEditor()}
                     onSave={(newVal: string) =>
@@ -495,6 +476,7 @@ const Home: NextPage = () => {
                     <p className="mb-4">You can add max 6 tweet links here:</p>
 
                     <Editor
+                      name="tweetURLs"
                       value={newRoundInfo.tweetURLs}
                       onCancel={() => handleCancelEditor(true)}
                       onSave={(newVal: string) =>
@@ -633,25 +615,48 @@ const Home: NextPage = () => {
                       </div>
                     </Card>
 
-                    <div className="flex flex-col gap-8 max-w-3xl m-auto">
+                    <div className="flex flex-col gap-8 max-w-[65ch] m-auto">
                       {applications?.slice(0, 10).map((proj) => (
                         <div
                           key={proj.id}
                           className="pt-8 flex flex-col items-center gap-8"
                         >
                           <ProjectCard
-                            link={
-                              proj.metadata.application.project?.projectGithub
-                            }
+                            link={getGranteeLink(chainId, id, proj.id)}
                             name={proj.metadata.application.project?.title}
                             contributions={proj.votes}
                             matchAmount={proj.matchingData?.matchAmountUSD}
                             crowdfundedAmount={proj.amountUSD}
-                            description={proj.metadata.application.project?.description.replaceAll(
-                              markdownImgRegex,
-                              ""
-                            )}
+                            description={
+                              newRoundInfo?.projects
+                                ?.find((p) => p.id == proj.projectId)
+                                ?.description?.replaceAll(
+                                  markdownImgRegex,
+                                  ""
+                                ) || ""
+                            }
                             imgSrc={`https://ipfs.io/ipfs/${proj.metadata.application.project?.logoImg}`}
+                            canEdit={isRoundOperator && isSignSuccess}
+                            onCancel={() => handleCancelEditor()}
+                            onSave={async (newDescription: string) =>
+                              await uploadRoundInfo(
+                                {
+                                  ...newRoundInfo,
+                                  projects: [
+                                    ...newRoundInfo.projects.map((p) =>
+                                      p.id == proj.projectId
+                                        ? {
+                                            ...p,
+                                            description: newDescription,
+                                          }
+                                        : p
+                                    ),
+                                  ],
+                                },
+                                id
+                              )
+                            }
+                            isLoading={isUploading}
                           />
                           <Image
                             src={projectsDivider}
@@ -676,6 +681,14 @@ const Loading = () => {
   return (
     <div className="min-h-[95vh] flex justify-center ">
       <p className="text-center mt-4 text-semibold">Loading...</p>
+    </div>
+  );
+};
+
+const NotFound = () => {
+  return (
+    <div className="min-h-[95vh] flex justify-center ">
+      <p className="text-center mt-4 text-semibold">Round not found</p>
     </div>
   );
 };
