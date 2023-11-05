@@ -11,7 +11,6 @@ export default function Document() {
           rel="stylesheet"
         />
         <link rel="stylesheet" href="https://use.typekit.net/hbx6hnl.css" />
-
         <meta name="description" content={PAGE_DESCRIPTION} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Gitcoin Round Report Cards" />
@@ -20,7 +19,6 @@ export default function Document() {
           name="twitter:image"
           content="https://reportcards.gitcoin.co/report-cards-twitter-card.jpg"
         />
-
         <meta property="og:title" content="Gitcoin Round Report Cards" />
         <meta property="og:url" content="https://reportcards.gitcoin.co/" />
         <meta
@@ -28,6 +26,8 @@ export default function Document() {
           content="https://reportcards.gitcoin.co/report-cards-twitter-card.jpg"
         />
         <meta property="og:description" content={PAGE_DESCRIPTION} />
+        <link rel="icon" type="image/x-icon" href="https://assets-global.website-files.com/6433c5d029c6bb75f3f00bd5/6433c5d029c6bb9127f00c07_gitcoin-fav3.png" />
+        
       </Head>
       <body>
         <Main />
