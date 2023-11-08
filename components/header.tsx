@@ -1,4 +1,5 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+"use client";
+import { useCallback, useEffect, useState } from "react";
 import gitcoinLogo from "/assets/gitcoin-logo.svg";
 import heroBg from "/assets/hero-bg.svg";
 import Image from "next/image";
@@ -6,17 +7,11 @@ import filtersContext from "../contexts/filtersContext";
 import { CHAINS, isTestnet } from "../api/utils";
 import roundsContext from "../contexts/roundsContext";
 import { Round } from "../api/types";
-import { useRouter } from "next/router";
+import { usePathname, useRouter } from "next/navigation";
 import { Address } from "viem";
 import { getRoundsByChainId } from "../api/round";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Select, {
-  components,
-  OptionProps,
-  ValueContainerProps,
-  Props as SelectProps,
-  SingleValue,
-} from "react-select";
+import Select, { Props as SelectProps, SingleValue } from "react-select";
 import dayjs from "dayjs";
 
 type OptionType = {
@@ -25,10 +20,42 @@ type OptionType = {
 };
 
 export default function Header() {
-  const { filters, setFilters } = useContext(filtersContext);
-  const { setRounds, setRoundsLoading, roundsLoading } =
-    useContext(roundsContext);
-  const [newFilters, setNewFilters] = useState(filters);
+  const pathname = usePathname();
+  const [filters, setFilters] = useState({
+    chainId: pathname?.split("/")[1] as string,
+    roundId: pathname?.split("/")[2] as string,
+  });
+
+  const [newFilters, setNewFilters] = useState({
+    chainId: pathname?.split("/")[1] as string,
+    roundId: pathname?.split("/")[2] as string,
+  });
+
+  useEffect(() => {
+    const newChainId = pathname?.split("/")[1] as string;
+    const newRoundId = pathname?.split("/")[2] as string;
+
+    if (!newChainId) return;
+    const init = async () => {
+      if (!!allRounds?.length) return;
+      const data = await getRounds(newChainId);
+      setAllRounds(data);
+    };
+
+    init();
+
+    if (filters.roundId) return;
+    setNewFilters({
+      chainId: newChainId,
+      roundId: newRoundId,
+    });
+    !filters.roundId &&
+      setFilters({
+        chainId: newChainId,
+        roundId: newRoundId,
+      });
+  }, [pathname]);
+
   const router = useRouter();
   const chains: OptionType[] =
     Object.values(CHAINS)
@@ -50,34 +77,21 @@ export default function Header() {
         Number(chainId)
       );
       if (!success) throw new Error(error);
-     
+
       const filteredData = data?.filter(
         (round) =>
           !!round.metadata?.name &&
           !!round.metadata.quadraticFundingConfig?.matchingFundsAvailable &&
           !!round.votes &&
-          !round.metadata?.name.toLowerCase().includes("test")  &&
+          !round.metadata?.name.toLowerCase().includes("test") &&
           round.amountUSD > 50
-          // && dayjs.unix(Number(round.roundEndTime)).isAfter(dayjs(minDate))
+        // && dayjs.unix(Number(round.roundEndTime)).isAfter(dayjs(minDate))
       );
       return filteredData;
     } catch (err) {
       console.log(err);
     }
   }, []);
-
-  useEffect(() => {
-    if (!filters || !roundsLoading) return;
-    const init = async () => {
-      setNewFilters(filters);
-      if (!filters.chainId) return;
-      const data = await getRounds(filters.chainId);
-      setAllRounds(data);
-      setRounds(data);
-      setRoundsLoading(false);
-    };
-    init();
-  }, [filters]);
 
   useEffect(() => {
     setRoundOptions(
@@ -98,10 +112,9 @@ export default function Header() {
   };
 
   const handleRoundChange = (option: SingleValue<OptionType>) => {
-    setNewFilters({ ...newFilters, roundId: option?.value });
-    setFilters(newFilters);
-    setRounds(allRounds);
     router.push(`/${newFilters.chainId}/${option?.value}`);
+    setNewFilters({ ...newFilters, roundId: option?.value! });
+    setFilters({ ...newFilters, roundId: option?.value! });
   };
 
   return (

@@ -1,4 +1,9 @@
-import { fetchFromIPFS, formatCurrency, graphql_fetch } from "./utils";
+import {
+  fetchFromIPFS,
+  findRoundById,
+  formatCurrency,
+  graphql_fetch,
+} from "./utils";
 import { Address, getAddress } from "viem";
 import {
   ApplicationStatus,
@@ -11,7 +16,6 @@ import {
   ProjectIPFSMetadata,
   ProjectMetadata,
   Round,
-  RoundInfo,
 } from "./types";
 import { BigNumber, ethers } from "ethers";
 import roundImplementationAbi from "./abi/roundImplementation";
@@ -78,6 +82,25 @@ export type RoundProject = {
   id: string;
   status: ApplicationStatus;
   payoutAddress: string;
+};
+
+export const getRoundById = async (
+  chainId: number,
+  roundId: string
+): Promise<{ data: Round | undefined; success: boolean; error: string }> => {
+  const allRounds = await getRoundsByChainId(chainId);
+  if (!allRounds.success)
+    return {
+      success: false,
+      error: allRounds.error,
+      data: undefined,
+    };
+  const round = findRoundById(allRounds.data || [], roundId);
+  return {
+    success: false,
+    error: allRounds.error,
+    data: round,
+  };
 };
 
 export const getRoundsByChainId = async (

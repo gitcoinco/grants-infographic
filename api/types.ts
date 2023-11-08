@@ -139,6 +139,7 @@ export interface Round {
   uniqueContributors: number;
   rate: number;
   matchingPoolUSD: number;
+  matchingFundPayoutToken: PayoutToken;
 }
 
 export type GrantApplicationFormAnswer = {

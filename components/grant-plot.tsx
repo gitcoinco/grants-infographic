@@ -1,7 +1,8 @@
+"use client";
 import { useEffect, useState } from "react";
-import Plot from "react-plotly.js";
 import useWindowDimensions from "../hooks/useWindowDimensions";
 import { formatAmount } from "../api/utils";
+const Plot = require("react-plotly.js").default;
 
 export default function GrantPlot({
   values,
@@ -10,6 +11,7 @@ export default function GrantPlot({
   values: number[];
   labels: string[];
 }) {
+  console.log(values, labels);
   const { height, width } = useWindowDimensions();
 
   const colors = Array(20)
@@ -151,7 +153,7 @@ export default function GrantPlot({
             marker: {
               line: { width: 2 },
 
-              colors
+              colors,
             },
           },
         ]}
