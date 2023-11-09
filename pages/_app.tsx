@@ -2,7 +2,6 @@ import "tailwindcss/tailwind.css";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import type { AppProps } from "next/app";
-import "./globals.css";
 import { configureChains, createConfig, WagmiConfig } from "wagmi";
 import "react-quill/dist/quill.snow.css";
 import {
@@ -16,7 +15,6 @@ import {
 
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
-import Layout from "../components/layout";
 import { createContext, useState } from "react";
 import filtersContext, { Filters } from "../contexts/filtersContext";
 import { Round } from "../api/types";
@@ -89,9 +87,7 @@ function MyApp({ Component, pageProps }: AppProps) {
             value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}
           >
             <filtersContext.Provider value={{ filters, setFilters }}>
-              <Layout>
                 <Component {...pageProps} />
-              </Layout>
             </filtersContext.Provider>
           </roundsContext.Provider>
         </RainbowKitProvider>

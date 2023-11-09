@@ -9,8 +9,8 @@ export default function Footer() {
         href="https://www.gitcoin.co/grants-stack"
       >
         <Image src={grantsStackLogo} alt="grants stack logo" width={65} />
-        <h3 className="link sm:text-lg sm:text-left text-center">
-          <span>This Round was Hosted on Grants Stack</span>
+        <h3 className="link sm:text-lg sm:text-left text-center !no-underline">
+          <span>This round was hosted on Gitcoin Grants Stack</span>
           <br /> <span> Host your own today</span>
         </h3>
       </a>

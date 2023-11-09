@@ -3,12 +3,14 @@ import { twitterRegex } from "../api/utils";
 import { useState } from "react";
 
 export default function Editor({
+  name,
   value,
   onCancel,
   onSave,
   isLoading,
   isTextarea,
 }: {
+  name: string;
   value: string;
   onCancel: () => void;
   onSave: (newVal: string) => void;
@@ -19,8 +21,8 @@ export default function Editor({
     tweets: value?.length ? value.split(",") : [""],
   });
 
-  const [initialIntroValue, setInitialIntroValue] = useState({
-    preamble: value,
+  const [initialTextareaValue, setInitialTextareaValue] = useState({
+    [name]: value,
   });
 
   function validateTweet(value: string) {
@@ -41,14 +43,14 @@ export default function Editor({
         {isTextarea ? (
           <div>
             <Formik
-              initialValues={initialIntroValue}
+              initialValues={initialTextareaValue}
               onSubmit={(values) => {
-                onSave(values.preamble);
+                onSave(values[name]);
               }}
             >
               <Form>
                 <Field
-                  name="preamble"
+                  name={name}
                   as="textarea"
                   className="w-full min-h-[10rem]"
                 />

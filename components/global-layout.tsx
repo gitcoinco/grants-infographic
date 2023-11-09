@@ -1,12 +1,10 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import {ReactNode} from 'react';
-import gitcoinLogo from '/assets/gitcoin-logo.svg';
 import heroBg from '/assets/hero-bg.svg';
 import Image from 'next/image';
 import Header from './header';
 import Footer from './footer';
 
-export default function Layout({children}: {children: ReactNode}) {
+export default function GlobalLayout({children}: {children: ReactNode}) {
   return (
     <>
     <div className="bg-sand min-h-screen max-w-[100vw]">

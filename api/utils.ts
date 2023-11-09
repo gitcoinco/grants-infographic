@@ -1,24 +1,25 @@
-import { useSearchParams } from "react-router-dom";
 import {
-  IPFSObject,
   MatchingStatsData,
   PayoutToken,
   Program,
   ProjectApplication,
   RedstoneTokenIds,
   Round,
-  RoundInfo,
 } from "./types";
 import { BigNumber, ethers } from "ethers";
 import { getAddress } from "viem";
-const pinataSDK = require("@pinata/sdk");
-const pinata = new pinataSDK({
-  pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
-});
+
+export const getGranteeLink = (
+  chainId: number,
+  roundId: string,
+  applicationId: string
+) => {
+  return `https://explorer.gitcoin.co/#/round/${chainId}/${roundId}/${roundId}-${applicationId}`;
+};
 
 export const defaultTweetURL =
   "https://twitter.com/umarkhaneth/status/1718319104178753678";
-  
+
 export const twitterRegex: RegExp =
   /^https?:\/\/(www.|m.|mobile.)?twitter|x\.com\/(?:#!\/)?\w+\/status?\/\d+/;
 
@@ -73,15 +74,15 @@ export const formatAmount = (amount: string | number, noDigits?: boolean) => {
 //   return {newProjects, sum}
 // };
 
-export function useDebugMode(): boolean {
-  const [searchParams] = useSearchParams();
+// export function useDebugMode(): boolean {
+//   const [searchParams] = useSearchParams();
 
-  return (
-    (process.env.NEXT_PUBLIC_ALLOW_URL_DEBUG_MODE === "true" &&
-      searchParams.get("debug") === "true") ||
-    process.env.NEXT_PUBLIC_DEBUG_MODE === "true"
-  );
-}
+//   return (
+//     (process.env.NEXT_PUBLIC_ALLOW_URL_DEBUG_MODE === "true" &&
+//       searchParams.get("debug") === "true") ||
+//     process.env.NEXT_PUBLIC_DEBUG_MODE === "true"
+//   );
+// }
 
 export const isTestnet = (chainId: number) => {
   const testnetIds = [
@@ -687,7 +688,9 @@ const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL
 
 export const fetchFromIPFS = (cid: string, roundInfo?: boolean) => {
   const IFPSUrl = roundInfo ? GATEWAY_URL : URL;
-  return fetch(`https://${IFPSUrl}/ipfs/${cid}`).then((resp) => {
+  return fetch(`https://${IFPSUrl}/ipfs/${cid}`, {
+    next: { tags: [roundInfo ? "roundInfo" : ""] },
+  }).then((resp) => {
     if (resp.ok) {
       return resp.json();
     }
@@ -729,6 +732,10 @@ export const formatCurrency = (value: BigNumber, decimal: number) => {
   return parseFloat(ethers.utils.formatUnits(value.toString(), decimal));
 };
 
-export const getRoundById = (rounds: Round[], roundId: string) => {
-  return rounds.find((round) => round.id == getAddress(roundId));
+export const findRoundById = (rounds: Round[], roundId: string) => {
+  return roundId
+    ? rounds.find((round) => round.id == getAddress(roundId))
+    : undefined;
 };
+
+export const defaultIntro = `Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.`;
