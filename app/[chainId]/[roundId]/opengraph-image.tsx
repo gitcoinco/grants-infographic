@@ -1,4 +1,3 @@
-import { ImageResponse } from "next/og";
 import { GrantPageProps } from "./page";
 import { Address, getAddress } from "viem";
 import dayjs from "dayjs";
@@ -13,16 +12,10 @@ import {
 } from "../../../api/types";
 import { formatAmount, payoutTokens } from "../../../api/utils";
 import { ethers } from "ethers";
-import { DM_Mono, Inter } from "next/font/google";
+import { ImageResponse } from "next/server";
 dayjs.extend(LocalizedFormat);
 
 export const runtime = "edge";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
-const dmMono = DM_Mono({ subsets: ["latin"], weight: ["300", "400", "500"] });
 
 async function getData(chainId: number, roundId: Address) {
   let roundData: Round | undefined = undefined,
