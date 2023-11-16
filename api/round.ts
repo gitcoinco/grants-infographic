@@ -109,9 +109,7 @@ export const getRoundsByChainId = async (
   try {
     const resp = await fetch(
       `https://indexer-production.fly.dev/data/${chainId}/rounds.json`,
-      {
-        method: "GET",
-      }
+     { next: { revalidate: 3600 } }
     );
     const data = (await resp.json()) as Round[];
 
@@ -189,9 +187,7 @@ export const getProjectsApplications = async (
       `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
         roundId
       )}/applications.json`,
-      {
-        method: "GET",
-      }
+      { next: { revalidate: 3600 } }
     );
     const data = (await resp.json()) as ProjectApplication[];
 

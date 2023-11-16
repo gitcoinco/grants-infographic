@@ -26,9 +26,7 @@ async function getData(chainId: number, roundId: Address) {
   try {
     const resp = await fetch(
       `https://indexer-production.fly.dev/data/${chainId}/rounds.json`,
-      {
-        method: "GET",
-      }
+      { next: { revalidate: 3600 } }
     );
     const allRounds = (await resp.json()) as Round[];
 
@@ -58,9 +56,7 @@ async function getData(chainId: number, roundId: Address) {
       `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
         roundId
       )}/applications.json`,
-      {
-        method: "GET",
-      }
+      { next: { revalidate: 3600 } }
     );
     const applicationsData = (await applicationsResp.json()) as ProjectApplication[];
 
