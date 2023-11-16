@@ -191,14 +191,20 @@ export const CHAINS: Record<ChainId, Program["chain"]> = {
   },
 };
 
-export const TokenNamesAndLogos: Record<string, string> = {
-  FTM: "./logos/fantom-logo.svg",
-  BUSD: "./logos/busd-logo.svg",
-  DAI: "./logos/dai-logo.svg",
-  ETH: "./logos/ethereum-eth-logo.svg",
-  OP: "./logos/optimism-logo.svg",
-  PGN: "./logos/pgn-logo.svg",
-};
+export const TokenNamesAndLogos = {
+  FTM: "/logos/fantom-logo.svg",
+  BUSD: "/logos/busd-logo.svg",
+  DAI: "/logos/dai-logo.svg",
+  USDC: "./logos/usdc-logo.svg",
+  ETH: "/logos/ethereum-eth-logo.svg",
+  OP: "/logos/optimism-logo.svg",
+  ARB: "/logos/arb-logo.svg",
+  GCV: "/logos/gcv.svg",
+  GTC: "/logos/gtc.svg",
+  AVAX: "/logos/avax-logo.svg",
+  MATIC: "/logos/pol-logo.svg",
+  CVP: "/logos/power-pool.png", // PowerPool
+} as const;
 
 const MAINNET_TOKENS: PayoutToken[] = [
   {
@@ -464,6 +470,14 @@ const POLYGON_TOKENS: PayoutToken[] = [
     logo: TokenNamesAndLogos["MATIC"],
     redstoneTokenId: RedstoneTokenIds["MATIC"],
   },
+  {
+    name: "USDC",
+    chainId: ChainId.POLYGON,
+    address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    decimal: 6,
+    logo: TokenNamesAndLogos["USDC"],
+    redstoneTokenId: RedstoneTokenIds["USDC"],
+  },
 ];
 
 const POLYGON_MUMBAI_TOKENS: PayoutToken[] = [
@@ -474,6 +488,14 @@ const POLYGON_MUMBAI_TOKENS: PayoutToken[] = [
     decimal: 18,
     logo: TokenNamesAndLogos["MATIC"],
     redstoneTokenId: RedstoneTokenIds["MATIC"],
+  },
+  {
+    name: "USDC",
+    chainId: ChainId.POLYGON_MUMBAI,
+    address: "0x9999f7Fea5938fD3b1E26A12c3f2fb024e194f97",
+    decimal: 6,
+    logo: TokenNamesAndLogos["USDC"],
+    redstoneTokenId: RedstoneTokenIds["USDC"],
   },
 ];
 
