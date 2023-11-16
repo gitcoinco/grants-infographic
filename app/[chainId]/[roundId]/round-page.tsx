@@ -33,13 +33,10 @@ import roundImplementationAbi from "../../../api/abi/roundImplementation";
 import { markdownImgRegex } from "../../../constants";
 import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
-const GrantPlot = dynamic(
-  () => import("../../../components/grant-plot"),
-  {
-    ssr: false,
-    loading: () => <>Loading...</>,
-  }
-);
+const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
+  ssr: false,
+  loading: () => <>Loading...</>,
+});
 
 export default function RoundPage({
   roundData,
@@ -325,31 +322,29 @@ export default function RoundPage({
                 totalCrowdfunded={roundData.amountUSD}
                 totalProjects={allApplications?.length || 0}
               >
-                {!!applications?.length &&
-                  applications[0].matchingData?.matchAmountUSD && (
-                    <GrantPlot
-                      values={
-                        applications?.map(
-                          (ap) =>
-                            (ap.matchingData?.matchAmountUSD || 0) +
-                            ap.amountUSD
-                        ) || []
-                      }
-                      labels={
-                        applications?.map(
-                          (ap) =>
-                            `${ap.metadata.application.project.title.slice(
-                              0,
-                              20
-                            )}${
-                              ap.metadata.application.project.title.length >= 20
-                                ? "..."
-                                : ""
-                            }`
-                        ) || []
-                      }
-                    />
-                  )}
+                {!!applications?.length && (
+                  <GrantPlot
+                    values={
+                      applications?.map(
+                        (ap) =>
+                          (ap.matchingData?.matchAmountUSD || 0) + ap.amountUSD
+                      ) || []
+                    }
+                    labels={
+                      applications?.map(
+                        (ap) =>
+                          `${ap.metadata.application.project.title.slice(
+                            0,
+                            20
+                          )}${
+                            ap.metadata.application.project.title.length >= 20
+                              ? "..."
+                              : ""
+                          }`
+                      ) || []
+                    }
+                  />
+                )}
               </Stats>
 
               {/* Intro */}
