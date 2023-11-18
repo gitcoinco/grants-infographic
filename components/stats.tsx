@@ -67,7 +67,7 @@ export default function Stats({
             <div>
               <p className="text-orange text-xl pb-2 font-grad">
                 {matchingCapPercent.toFixed()}% (
-                {formatAmount(matchingCapTokenValue)}{" "}
+                {formatAmount(matchingCapTokenValue, true)}{" "}
                 {matchingFundPayoutToken.name})
               </p>
               <p className="sm:text-base text-sm">Matching Cap</p>
