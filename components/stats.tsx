@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
-import { Round } from "../api/types";
-import { formatAmount } from "../api/utils";
+import { PayoutToken, Round } from "../api/types";
+import { formatAmount, payoutTokens } from "../api/utils";
 import Card from "./card";
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
+import { ethers } from "ethers";
 dayjs.extend(LocalizedFormat);
 
 export default function Stats({
@@ -11,33 +12,48 @@ export default function Stats({
   totalCrowdfunded,
   totalProjects,
   // matching value by projects
-  projectsAmount,
+  projectsTokenAmount,
   children,
 }: {
   round: Round;
   totalCrowdfunded: number;
   totalProjects: number;
-  projectsAmount: number[];
+  projectsTokenAmount: number[];
   children: ReactNode;
 }) {
+   const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
+     (t) => t.address.toLowerCase() == round.token.toLowerCase()
+   )[0];
+   const tokenAmount = parseFloat(
+     ethers.utils.formatUnits(
+       round.matchAmount,
+       matchingFundPayoutToken.decimal
+     )
+   );
+
   const matchingCapPercent =
     round.metadata?.quadraticFundingConfig?.matchingCapAmount || 0;
-  const matchingCapValue =
-    ((round.metadata?.quadraticFundingConfig?.matchingFundsAvailable || 0) *
+  const matchingCapTokenValue =
+    ((tokenAmount || 0) *
       (matchingCapPercent || 0)) /
     100;
   const projectsReachedMachingCap: number =
-    projectsAmount.filter((amount) => amount >= matchingCapValue)?.length || 0;
+    projectsTokenAmount?.filter((amount) => amount >= matchingCapTokenValue)?.length || 0;
+ 
   return (
     <Card>
       <div className="flex flex-col gap-4">
         <h2 className="text-xl mb-6">{round.metadata?.name}</h2>
         <div
-          className={`${!!matchingCapPercent ? 'xl:grid-cols-4' : 'xl:grid-cols-3'} grid grid-cols-2 gap-4 child:py-2`}
+          className={`${
+            !!matchingCapPercent ? "xl:grid-cols-4" : "xl:grid-cols-3"
+          } grid grid-cols-2 gap-4 child:py-2`}
         >
           <div>
             <p className="text-orange text-xl pb-2 font-grad">
-              $ {formatAmount(round.matchingPoolUSD || 0)}
+              {formatAmount(tokenAmount, true)} {matchingFundPayoutToken.name}{" "}
+              <br />
+              ($ {formatAmount(round.matchingPoolUSD || 0)})
             </p>
             <p className="sm:text-base text-sm">Matching Pool</p>
           </div>
@@ -50,8 +66,9 @@ export default function Stats({
           {!!matchingCapPercent && (
             <div>
               <p className="text-orange text-xl pb-2 font-grad">
-                {matchingCapPercent.toFixed()}% ($
-                {formatAmount(matchingCapValue)})
+                {matchingCapPercent.toFixed()}% (
+                {formatAmount(matchingCapTokenValue)}{" "}
+                {matchingFundPayoutToken.name})
               </p>
               <p className="sm:text-base text-sm">Matching Cap</p>
             </div>

@@ -357,17 +357,14 @@ export async function fetchMatchingDistribution(
     );
     const distributionMetaPtrRes = await payoutStrategy.distributionMetaPtr();
     const distributionMetaPtr = distributionMetaPtrRes.pointer;
-
     if (distributionMetaPtr !== "") {
       // fetch distribution from IPFS
       const matchingDistributionRes = await fetchFromIPFS(distributionMetaPtr);
       matchingDistribution = matchingDistributionRes.matchingDistribution;
-
       // parse matchAmountInToken to a valid BigNumber + add matchAmount
       matchingDistribution = matchingDistribution.map((distribution) => {
         const x = BigNumber.from((distribution.matchAmountInToken as any).hex);
         distribution.matchAmountInToken = x;
-        const y = Number(BigInt(x._hex).toString());
         const z = formatCurrency(x, token.decimal);
         return {
           ...distribution,

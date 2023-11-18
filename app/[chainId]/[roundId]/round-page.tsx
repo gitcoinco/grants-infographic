@@ -313,10 +313,10 @@ export default function RoundPage({
               {/* Stats */}
               <Stats
                 round={roundData}
-                projectsAmount={
+                projectsTokenAmount={
                   applications?.map(
                     (application) =>
-                      application.matchingData?.matchAmountUSD || 0
+                      application.matchingData?.matchAmount || 0
                   ) || []
                 }
                 totalCrowdfunded={roundData.amountUSD}

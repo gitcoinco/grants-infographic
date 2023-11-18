@@ -21,7 +21,8 @@ async function getData(chainId: number, roundId: Address) {
   let roundData: Round | undefined = undefined,
     applications:
       | (ProjectApplication & { matchingData?: MatchingStatsData })[]
-      | undefined = undefined;
+      | undefined = undefined,
+    tokenAmount = 0;
 
   try {
     const resp = await fetch(
@@ -39,7 +40,7 @@ async function getData(chainId: number, roundId: Address) {
     const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
       (t) => t.address.toLowerCase() == data?.token.toLowerCase()
     )[0];
-    const tokenAmount = parseFloat(
+    tokenAmount = parseFloat(
       ethers.utils.formatUnits(
         data.matchAmount,
         matchingFundPayoutToken.decimal
@@ -69,11 +70,11 @@ async function getData(chainId: number, roundId: Address) {
   } catch (err) {
     console.log(err);
   }
-  return { roundData, applications };
+  return { roundData, applications, tokenAmount };
 }
 
 export default async function GET(params: GrantPageProps) {
-  const { roundData, applications } = await getData(
+  const { roundData, applications, tokenAmount } = await getData(
     Number(params.params.chainId),
     params.params.roundId as Address
   );
@@ -155,7 +156,9 @@ export default async function GET(params: GrantPageProps) {
               flexDirection: "column",
             }}
           >
-            <h2 style={{ marginBottom: "40px", marginTop: "40px", fontSize: 26 }}>
+            <h2
+              style={{ marginBottom: "40px", marginTop: "40px", fontSize: 26 }}
+            >
               {roundData?.metadata?.name}
             </h2>
             <div
@@ -165,7 +168,7 @@ export default async function GET(params: GrantPageProps) {
                 gap: 16,
                 maxWidth: "100%",
                 marginBottom: "20px",
-                marginTop: "40px"
+                marginTop: "40px",
               }}
             >
               <div
@@ -177,11 +180,12 @@ export default async function GET(params: GrantPageProps) {
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
-                  $ {formatAmount(roundData?.matchingPoolUSD || 0)}
+                  {formatAmount(tokenAmount, true)}{" "}
+                  {roundData?.matchingFundPayoutToken.name} (${" "}
+                  {formatAmount(roundData?.matchingPoolUSD || 0)})
                 </p>
-                <span style={{ fontSize: 18 }}>
-                  Matching Pool
-                </span>
+
+                <span style={{ fontSize: 18 }}>Matching Pool</span>
               </div>
               <div
                 style={{
