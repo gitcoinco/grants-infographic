@@ -14,7 +14,7 @@ export const getGranteeLink = (
   roundId: string,
   applicationId: string
 ) => {
-  return `https://explorer.gitcoin.co/#/round/${chainId}/${roundId}/${roundId}-${applicationId}`;
+  return `https://explorer.gitcoin.co/#/round/${chainId}/${roundId.toLowerCase()}/${roundId.toLowerCase()}-${applicationId}`;
 };
 
 export const defaultTweetURL =
