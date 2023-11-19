@@ -49,22 +49,22 @@ export default function Stats({
             !!matchingCapPercent ? "xl:grid-cols-4" : "xl:grid-cols-3"
           } grid grid-cols-2 gap-4 child:py-2`}
         >
-          <div>
-            <p className="text-orange text-xl pb-2 font-grad">
+          <div className="flex flex-col justify-between">
+            <p className="text-orange text-xl pb-2 font-grad leading-none">
               {formatAmount(tokenAmount, true)} {matchingFundPayoutToken.name}{" "}
               <br />
               ($ {formatAmount(round.matchingPoolUSD || 0)})
             </p>
             <p className="sm:text-base text-sm">Matching Pool</p>
           </div>
-          <div>
+          <div className="flex flex-col justify-between">
             <p className="text-orange text-xl pb-2 font-grad">
               $ {formatAmount(totalCrowdfunded.toFixed(2))}
             </p>
             <p className="sm:text-base text-sm">Total USD Crowdfunded</p>
           </div>
           {!!matchingCapPercent && (
-            <div>
+            <div className="flex flex-col justify-between">
               <p className="text-orange text-xl pb-2 font-grad">
                 {matchingCapPercent.toFixed()}% (
                 {formatAmount(matchingCapTokenValue, true)}{" "}
@@ -74,7 +74,7 @@ export default function Stats({
             </div>
           )}
           {!!round.roundEndTime && (
-            <div>
+            <div className="flex flex-col justify-between">
               <p className="text-orange text-xl pb-2 font-grad">
                 {dayjs.unix(Number(round.roundEndTime)).format("lll")}
               </p>

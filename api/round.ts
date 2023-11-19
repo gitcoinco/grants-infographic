@@ -5,6 +5,9 @@ import {
   graphql_fetch,
 } from "./utils";
 import { Address, getAddress } from "viem";
+import dayjs from "dayjs";
+import LocalizedFormat from "dayjs/plugin/localizedFormat";
+import redstone from "redstone-api";
 import {
   ApplicationStatus,
   Eligibility,
@@ -25,6 +28,8 @@ const pinataSDK = require("@pinata/sdk");
 const pinata = new pinataSDK({
   pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
 });
+
+dayjs.extend(LocalizedFormat);
 
 /**
  * Shape of subgraph response
@@ -97,8 +102,8 @@ export const getRoundById = async (
     };
   const round = findRoundById(allRounds.data || [], roundId);
   return {
-    success: false,
-    error: allRounds.error,
+    success: true,
+    error: "",
     data: round,
   };
 };
@@ -109,7 +114,7 @@ export const getRoundsByChainId = async (
   try {
     const resp = await fetch(
       `https://indexer-production.fly.dev/data/${chainId}/rounds.json`,
-     { next: { revalidate: 3600 } }
+      { next: { revalidate: 3600 } }
     );
     const data = (await resp.json()) as Round[];
 
@@ -332,6 +337,42 @@ export async function getProjectOwners(
   }
 }
 
+export async function fetchPayoutTokenPrice(
+  roundId: string | undefined,
+  signerOrProvider: any,
+  token: PayoutToken
+) {
+  if (!roundId) {
+    throw new Error("Round ID is required");
+  }
+  const roundImplementation = new ethers.Contract(
+    roundId,
+    roundImplementationAbi,
+    signerOrProvider
+  );
+  const payoutStrategyAddress = await roundImplementation.payoutStrategy();
+  const payoutStrategy = new ethers.Contract(
+    payoutStrategyAddress,
+    merklePayoutStrategyImplementationAbi,
+    signerOrProvider
+  );
+
+  const fundsDistributed = await payoutStrategy.queryFilter("FundsDistributed");
+
+  if (fundsDistributed?.length) {
+    const payoutTimestamp = (await fundsDistributed[0].getBlock()).timestamp;
+
+    const payoutDate = dayjs.unix(Number(payoutTimestamp)).toString();
+    const price = await redstone.getHistoricalPrice(
+      token.redstoneTokenId || token.name,
+      {
+        date: payoutDate, 
+      }
+    );
+    return price.value;
+  }
+  return;
+}
 //  Fetch finalized matching distribution
 export async function fetchMatchingDistribution(
   roundId: string | undefined,

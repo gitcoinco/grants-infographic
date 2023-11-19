@@ -2,7 +2,6 @@ import { GrantPageProps } from "./page";
 import { Address, getAddress } from "viem";
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
-
 import {
   ApplicationStatus,
   MatchingStatsData,
@@ -10,30 +9,27 @@ import {
   ProjectApplication,
   Round,
 } from "../../../api/types";
-import { formatAmount, payoutTokens } from "../../../api/utils";
+import { ChainId, formatAmount, payoutTokens } from "../../../api/utils";
 import { ethers } from "ethers";
 import { ImageResponse } from "next/server";
+import {
+  fetchPayoutTokenPrice,
+  getProjectsApplications,
+  getRoundById,
+} from "../../../api/round";
 dayjs.extend(LocalizedFormat);
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 async function getData(chainId: number, roundId: Address) {
   let roundData: Round | undefined = undefined,
+    tokenAmount = 0,
     applications:
       | (ProjectApplication & { matchingData?: MatchingStatsData })[]
-      | undefined = undefined,
-    tokenAmount = 0;
+      | undefined = undefined;
 
   try {
-    const resp = await fetch(
-      `https://indexer-production.fly.dev/data/${chainId}/rounds.json`,
-      { next: { revalidate: 3600 } }
-    );
-    const allRounds = (await resp.json()) as Round[];
-
-    const data = roundId
-      ? allRounds.find((round) => round.id == getAddress(roundId))
-      : undefined;
+    const { data } = await getRoundById(chainId, roundId);
 
     if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
       throw new Error("No round metadata");
@@ -46,26 +42,37 @@ async function getData(chainId: number, roundId: Address) {
         matchingFundPayoutToken.decimal
       )
     );
-    const rate = data.matchAmountUSD / tokenAmount;
+
+    // get payout token price
+    const signerOrProvider =
+      chainId == ChainId.PGN
+        ? new ethers.providers.JsonRpcProvider(
+            "https://rpc.publicgoods.network",
+            chainId
+          )
+        : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
+        ? new ethers.providers.JsonRpcProvider(
+            "https://rpcapi.fantom.network/",
+            chainId
+          )
+        : new ethers.providers.InfuraProvider(
+            chainId,
+            process.env.NEXT_PUBLIC_INFURA_API_KEY
+          );
+
+    const price = await fetchPayoutTokenPrice(
+      roundId,
+      signerOrProvider,
+      matchingFundPayoutToken
+    );
+    const rate = price ? price : data.matchAmountUSD / tokenAmount;
     const matchingPoolUSD =
       data.metadata?.quadraticFundingConfig?.matchingFundsAvailable * rate;
+
     roundData = { ...data, matchingPoolUSD, rate, matchingFundPayoutToken };
 
     // applications data
-
-    const applicationsResp = await fetch(
-      `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
-        roundId
-      )}/applications.json`,
-      { next: { revalidate: 3600 } }
-    );
-    const applicationsData = (await applicationsResp.json()) as ProjectApplication[];
-
-    const approvedData = applicationsData.filter(
-      (ap) => ap.status == ApplicationStatus.APPROVED
-    );
-    //
-    applications = approvedData;
+    applications = await getProjectsApplications(roundId, chainId);
     if (!applications) throw new Error("No applications");
   } catch (err) {
     console.log(err);
@@ -78,6 +85,17 @@ export default async function GET(params: GrantPageProps) {
     Number(params.params.chainId),
     params.params.roundId as Address
   );
+
+  const matchingCapPercent =
+    roundData?.metadata?.quadraticFundingConfig?.matchingCapAmount || 0;
+  const matchingCapTokenValue =
+    ((tokenAmount || 0) * (matchingCapPercent || 0)) / 100;
+  const projectsReachedMachingCap: number =
+    applications?.filter(
+      (application) =>
+        application.matchingData?.matchAmount! >= matchingCapTokenValue
+    )?.length || 0;
+
   return new ImageResponse(
     (
       <div
@@ -142,7 +160,7 @@ export default async function GET(params: GrantPageProps) {
             padding: "8px",
             borderRadius: "4px",
             justifyContent: "center",
-            width: "80%",
+            width: "95%",
           }}
         >
           <div
@@ -165,9 +183,9 @@ export default async function GET(params: GrantPageProps) {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                gap: 16,
+                gap: 10,
                 maxWidth: "100%",
-                marginBottom: "20px",
+                marginBottom: "36px",
                 marginTop: "40px",
               }}
             >
@@ -176,10 +194,10 @@ export default async function GET(params: GrantPageProps) {
                   display: "flex",
                   flexDirection: "column",
                   fontSize: 18,
-                  width: "33.33%",
+                  width: !!matchingCapPercent ? "25%" : "33.33%",
                 }}
               >
-                <p style={{ color: "#F17A4C", fontSize: 24 }}>
+                <p style={{ color: "#F17A4C", fontSize: 24, maxWidth: 160 }}>
                   {formatAmount(tokenAmount, true)}{" "}
                   {roundData?.matchingFundPayoutToken.name} (${" "}
                   {formatAmount(roundData?.matchingPoolUSD || 0)})
@@ -192,7 +210,8 @@ export default async function GET(params: GrantPageProps) {
                   display: "flex",
                   flexDirection: "column",
                   fontSize: 18,
-                  width: "33.33%",
+                  justifyContent: "space-between",
+                  width: !!matchingCapPercent ? "25%" : "33.33%",
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
@@ -206,8 +225,9 @@ export default async function GET(params: GrantPageProps) {
                 style={{
                   display: "flex",
                   flexDirection: "column",
+                  justifyContent: "space-between",
                   fontSize: 18,
-                  width: "33.33%",
+                  width: !!matchingCapPercent ? "25%" : "33.33%",
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
@@ -215,13 +235,32 @@ export default async function GET(params: GrantPageProps) {
                 </p>
                 <span style={{ fontSize: 18 }}>Round ended on</span>
               </div>
+
+              {!!matchingCapPercent && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    fontSize: 18,
+                    width: !!matchingCapPercent ? "25%" : "33.33%",
+                  }}
+                >
+                  <p style={{ color: "#F17A4C", fontSize: 24 }}>
+                    {matchingCapPercent.toFixed()}% (
+                    {formatAmount(matchingCapTokenValue, true)}{" "}
+                    {roundData?.matchingFundPayoutToken.name})
+                  </p>
+                  <span style={{ fontSize: 18 }}>Matching Cap</span>
+                </div>
+              )}
             </div>
 
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                gap: 16,
+                gap: 10,
                 maxWidth: "100%",
               }}
             >
@@ -230,7 +269,7 @@ export default async function GET(params: GrantPageProps) {
                   display: "flex",
                   flexDirection: "column",
                   fontSize: 18,
-                  width: "33.33%",
+                  width: !!matchingCapPercent ? "25%" : "33.33%",
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
@@ -243,7 +282,7 @@ export default async function GET(params: GrantPageProps) {
                   display: "flex",
                   flexDirection: "column",
                   fontSize: 18,
-                  width: "33.33%",
+                  width: !!matchingCapPercent ? "25%" : "33.33%",
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
@@ -256,7 +295,7 @@ export default async function GET(params: GrantPageProps) {
                   display: "flex",
                   flexDirection: "column",
                   fontSize: 18,
-                  width: "33.33%",
+                  width: !!matchingCapPercent ? "25%" : "33.33%",
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
@@ -264,6 +303,28 @@ export default async function GET(params: GrantPageProps) {
                 </p>
                 <span style={{ fontSize: 18 }}>Total Donors</span>
               </div>
+
+              {!!matchingCapPercent && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    fontSize: 18,
+                    width: !!matchingCapPercent ? "25%" : "33.33%",
+                  }}
+                >
+                  <p style={{ color: "#F17A4C", fontSize: 24 }}>
+                    {projectsReachedMachingCap}
+                  </p>
+                  <span style={{ fontSize: 18, maxWidth: 200 }}>
+                    {" "}
+                    {projectsReachedMachingCap == 1
+                      ? "Project"
+                      : "Projects"}{" "}
+                    Reaching Matching Cap
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
