@@ -33,6 +33,7 @@ import roundImplementationAbi from "../../../api/abi/roundImplementation";
 import { markdownImgRegex } from "../../../constants";
 import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
   loading: () => <>Loading...</>,
@@ -419,27 +420,37 @@ export default function RoundPage({
                     />
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-4 items-center justify-center ">
+                  <div className="md:w-[80vw] max-w-7xl m-auto">
                     {!!newRoundInfo?.tweetURLs?.length && (
-                      <>
-                        {newRoundInfo.tweetURLs
-                          .split(",")
-                          .map((tweetUrl, index) => (
-                            <div
-                              key={index}
-                              className="sm:w-[20rem] w-[16rem] max-h-64 overflow-y-scroll"
-                            >
-                              <TweetEmbed
-                                tweetId={getTweetId(tweetUrl)}
-                                options={{
-                                  theme: "dark",
-                                  align: "center",
-                                  dnt: "true",
-                                }}
-                              />
-                            </div>
-                          ))}
-                      </>
+                      <ResponsiveMasonry
+                        columnsCountBreakPoints={{
+                          350: 1,
+                          750: 2,
+                          1125:
+                            newRoundInfo.tweetURLs.split(",")?.length >= 3
+                              ? 3
+                              : newRoundInfo.tweetURLs.split(",")?.length >= 2
+                              ? 2
+                              : 1,
+                        }}
+                      >
+                        <Masonry gutter="1.5rem">
+                          {newRoundInfo.tweetURLs
+                            .split(",")
+                            .map((tweetUrl, index) => (
+                              <div key={index}>
+                                <TweetEmbed
+                                  tweetId={getTweetId(tweetUrl)}
+                                  options={{
+                                    theme: "dark",
+                                    align: "center",
+                                    dnt: "true",
+                                  }}
+                                />
+                              </div>
+                            ))}
+                        </Masonry>
+                      </ResponsiveMasonry>
                     )}
                   </div>
                 )}
