@@ -4,6 +4,7 @@ import {
   getProjectsApplications,
   fetchMatchingDistribution,
   getRoundInfo,
+  fetchPayoutTokenPrice,
 } from "../../../api/round";
 import {
   MatchingStatsData,
@@ -37,6 +38,7 @@ async function getData(chainId: number, roundId: Address) {
 
   try {
     const { data } = await getRoundById(chainId, roundId);
+
     if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
       throw new Error("No round metadata");
     const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
@@ -48,9 +50,33 @@ async function getData(chainId: number, roundId: Address) {
         matchingFundPayoutToken.decimal
       )
     );
-    const rate = data.matchAmountUSD / tokenAmount;
+
+    // get payout token price
+    const signerOrProvider =
+      chainId == ChainId.PGN
+        ? new ethers.providers.JsonRpcProvider(
+            "https://rpc.publicgoods.network",
+            chainId
+          )
+        : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
+        ? new ethers.providers.JsonRpcProvider(
+            "https://rpcapi.fantom.network/",
+            chainId
+          )
+        : new ethers.providers.InfuraProvider(
+            chainId,
+            process.env.NEXT_PUBLIC_INFURA_API_KEY
+          );
+
+    const price = await fetchPayoutTokenPrice(
+      roundId,
+      signerOrProvider,
+      matchingFundPayoutToken
+    );
+    const rate = price ? price : data.matchAmountUSD / tokenAmount;
     const matchingPoolUSD =
       data.metadata?.quadraticFundingConfig?.matchingFundsAvailable * rate;
+
     roundData = { ...data, matchingPoolUSD, rate, matchingFundPayoutToken };
 
     // applications data
@@ -128,13 +154,13 @@ export default async function Page({
     revalidateTag("roundInfo");
   };
   return (
-      <RoundPage
-        roundData={roundData!}
-        allApplications={applications!}
-        roundInfo={roundInfo!}
-        chainId={Number(chainId)}
-        roundId={roundId}
-        refetchRoundInfo={refetchRoundInfo}
-      />
+    <RoundPage
+      roundData={roundData!}
+      allApplications={applications!}
+      roundInfo={roundInfo!}
+      chainId={Number(chainId)}
+      roundId={roundId}
+      refetchRoundInfo={refetchRoundInfo}
+    />
   );
 }

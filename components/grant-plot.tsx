@@ -11,7 +11,6 @@ export default function GrantPlot({
   values: number[];
   labels: string[];
 }) {
-  console.log(values, labels);
   const { height, width } = useWindowDimensions();
 
   const colors = Array(20)

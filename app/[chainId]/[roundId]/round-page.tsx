@@ -33,6 +33,7 @@ import roundImplementationAbi from "../../../api/abi/roundImplementation";
 import { markdownImgRegex } from "../../../constants";
 import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
+import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
   loading: () => <>Loading...</>,
@@ -313,10 +314,9 @@ export default function RoundPage({
               {/* Stats */}
               <Stats
                 round={roundData}
-                projectsAmount={
+                projectsTokenAmount={
                   applications?.map(
-                    (application) =>
-                      application.matchingData?.matchAmountUSD || 0
+                    (application) => application.matchingData?.matchAmount || 0
                   ) || []
                 }
                 totalCrowdfunded={roundData.amountUSD}
@@ -420,27 +420,37 @@ export default function RoundPage({
                     />
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-4 items-center justify-center ">
+                  <div className="md:w-[80vw] max-w-7xl m-auto">
                     {!!newRoundInfo?.tweetURLs?.length && (
-                      <>
-                        {newRoundInfo.tweetURLs
-                          .split(",")
-                          .map((tweetUrl, index) => (
-                            <div
-                              key={index}
-                              className="sm:w-[20rem] w-[16rem] max-h-64 overflow-y-scroll"
-                            >
-                              <TweetEmbed
-                                tweetId={getTweetId(tweetUrl)}
-                                options={{
-                                  theme: "dark",
-                                  align: "center",
-                                  dnt: "true",
-                                }}
-                              />
-                            </div>
-                          ))}
-                      </>
+                      <ResponsiveMasonry
+                        columnsCountBreakPoints={{
+                          350: 1,
+                          750: 2,
+                          1125:
+                            newRoundInfo.tweetURLs.split(",")?.length >= 3
+                              ? 3
+                              : newRoundInfo.tweetURLs.split(",")?.length >= 2
+                              ? 2
+                              : 1,
+                        }}
+                      >
+                        <Masonry gutter="1.5rem">
+                          {newRoundInfo.tweetURLs
+                            .split(",")
+                            .map((tweetUrl, index) => (
+                              <div key={index}>
+                                <TweetEmbed
+                                  tweetId={getTweetId(tweetUrl)}
+                                  options={{
+                                    theme: "dark",
+                                    align: "center",
+                                    dnt: "true",
+                                  }}
+                                />
+                              </div>
+                            ))}
+                        </Masonry>
+                      </ResponsiveMasonry>
                     )}
                   </div>
                 )}
@@ -552,46 +562,12 @@ export default function RoundPage({
                           className="pt-8 flex flex-col items-center gap-8"
                         >
                           <ProjectCard
-                            // link={getGranteeLink(chainId, roundId, proj.id)}
-                            link={
-                              proj.metadata.application.project.projectTwitter
-                                ? `https://twitter.com/${proj.metadata.application.project.projectTwitter}`
-                                : proj.metadata.application.project.website
-                            }
+                            link={getGranteeLink(chainId, roundId, proj.id)}
                             name={proj.metadata.application.project?.title}
                             contributions={proj.votes}
                             matchAmount={proj.matchingData?.matchAmountUSD}
                             crowdfundedAmount={proj.amountUSD}
-                            description={
-                              newRoundInfo?.projects
-                                ?.find((p) => p.id == proj.projectId)
-                                ?.description?.replaceAll(
-                                  markdownImgRegex,
-                                  ""
-                                ) || ""
-                            }
                             imgSrc={`https://ipfs.io/ipfs/${proj.metadata.application.project?.logoImg}`}
-                            canEdit={isRoundOperator && isSignSuccess}
-                            onCancel={() => handleCancelEditor()}
-                            onSave={async (newDescription: string) =>
-                              await uploadRoundInfo(
-                                {
-                                  ...newRoundInfo,
-                                  projects: [
-                                    ...newRoundInfo.projects.map((p) =>
-                                      p.id == proj.projectId
-                                        ? {
-                                            ...p,
-                                            description: newDescription,
-                                          }
-                                        : p
-                                    ),
-                                  ],
-                                },
-                                roundId
-                              )
-                            }
-                            isLoading={isUploading}
                           />
                           <Image
                             src={projectsDivider}
