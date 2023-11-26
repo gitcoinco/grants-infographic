@@ -81,20 +81,20 @@ async function getData(chainId: number, roundId: Address) {
 }
 
 export default async function GET(params: GrantPageProps) {
-  const { roundData, applications, tokenAmount } = await getData(
-    Number(params.params.chainId),
-    params.params.roundId as Address
-  );
+  // const { roundData, applications, tokenAmount } = await getData(
+  //   Number(params.params.chainId),
+  //   params.params.roundId as Address
+  // );
 
-  const matchingCapPercent =
-    roundData?.metadata?.quadraticFundingConfig?.matchingCapAmount || 0;
-  const matchingCapTokenValue =
-    ((tokenAmount || 0) * (matchingCapPercent || 0)) / 100;
-  const projectsReachedMachingCap: number =
-    applications?.filter(
-      (application) =>
-        application.matchingData?.matchAmount! >= matchingCapTokenValue
-    )?.length || 0;
+  // const matchingCapPercent =
+  //   roundData?.metadata?.quadraticFundingConfig?.matchingCapAmount || 0;
+  // const matchingCapTokenValue =
+  //   ((tokenAmount || 0) * (matchingCapPercent || 0)) / 100;
+  // const projectsReachedMachingCap: number =
+  //   applications?.filter(
+  //     (application) =>
+  //       application.matchingData?.matchAmount! >= matchingCapTokenValue
+  //   )?.length || 0;
 
   return new ImageResponse(
     (
@@ -112,7 +112,7 @@ export default async function GET(params: GrantPageProps) {
           padding: "20px",
         }}
       >
-        <svg
+        {/* <svg
           style={{ position: "absolute" }}
           width="1440"
           height="764"
@@ -162,8 +162,8 @@ export default async function GET(params: GrantPageProps) {
             justifyContent: "center",
             width: "95%",
           }}
-        >
-          <div
+        > */}
+          {/* <div
             style={{
               backgroundColor: "#FFFDED",
               borderRadius: "32px",
@@ -327,7 +327,7 @@ export default async function GET(params: GrantPageProps) {
               )}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     ),
     {
