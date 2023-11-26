@@ -80,8 +80,8 @@ async function getData(chainId: number, roundId: Address) {
     roundData = { ...data, matchingPoolUSD, rate, matchingFundPayoutToken };
 
     // applications data
-    applications = await getProjectsApplications(roundId, chainId);
-    if (!applications) throw new Error("No applications");
+    // applications = await getProjectsApplications(roundId, chainId);
+    // if (!applications) throw new Error("No applications");
 
     // ipfs round data
     const {
