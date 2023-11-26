@@ -94,15 +94,11 @@ export default function RoundPage({
   const [pageError, setPageError] = useState({ value: false, message: "" });
   const reportTemplateRef = useRef(null);
 
-  const [isPageLoading, setIsPageLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   useEffect(() => {
-    async function getData(chainId: number, roundId: Address) {
-      let roundData: Round | undefined = undefined,
-        roundInfo: RoundInfo | undefined = undefined,
-        applications:
-          | (ProjectApplication & { matchingData?: MatchingStatsData })[]
-          | undefined = undefined;
+    async function getRoundData() {
+      let roundData: Round | undefined = undefined;
 
       try {
         const { data } = await getRoundById(chainId, roundId);
@@ -147,78 +143,45 @@ export default function RoundPage({
 
         roundData = { ...data, matchingPoolUSD, rate, matchingFundPayoutToken };
 
-        // applications data
-        applications = await getProjectsApplications(roundId, chainId);
-        if (!applications) throw new Error("No applications");
-
-        // ipfs round data
-        const {
-          data: roundInfoData,
-          error: roundInfoErr,
-          success: roundInfoSuccess,
-        } = await getRoundInfo(roundId);
-        if (!roundInfoSuccess) throw new Error(roundInfoErr);
-        const formattedRoundInfo = roundInfoData?.preamble
-          ? {
-              ...roundInfoData,
-              preamble: roundInfoData.preamble
-                .replace(/<\/?p[^>]*>/g, "")
-                .replaceAll("<br>", "\n"),
-            }
-          : roundInfoData;
-        roundInfo = formattedRoundInfo;
-
         setRoundData(roundData);
-        setRoundInfo(roundInfo);
-        setAllApplications(applications);
       } catch (err) {
         console.log(err);
       }
-
-      return { roundData, roundInfo, applications };
     }
-    const get = async (roundId: Address) => {
+
+    const getAllApplications = async () => {
+      // applications data
+      const applications = await getProjectsApplications(roundId, chainId);
+      setAllApplications(applications);
+    };
+
+    const getOperatorData = async () => {
+      // ipfs round data
+      const {
+        data: roundInfoData,
+        error: roundInfoErr,
+        success: roundInfoSuccess,
+      } = await getRoundInfo(roundId);
+      if (!roundInfoSuccess) throw new Error(roundInfoErr);
+      const formattedRoundInfo = roundInfoData?.preamble
+        ? {
+            ...roundInfoData,
+            preamble: roundInfoData.preamble
+              .replace(/<\/?p[^>]*>/g, "")
+              .replaceAll("<br>", "\n"),
+          }
+        : roundInfoData;
+      setRoundInfo(formattedRoundInfo);
+    };
+
+    const get = async (roundId: Address, chainId: number) => {
       try {
         setIsPageLoading(true);
-        if (!roundData) return;
-        // matching data
-        const signerOrProvider =
-          chainId == ChainId.PGN
-            ? new ethers.providers.JsonRpcProvider(
-                "https://rpc.publicgoods.network",
-                chainId
-              )
-            : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
-            ? new ethers.providers.JsonRpcProvider(
-                "https://rpcapi.fantom.network/",
-                chainId
-              )
-            : new ethers.providers.InfuraProvider(
-                chainId,
-                process.env.NEXT_PUBLIC_INFURA_API_KEY
-              );
-
-        const matchingData = await fetchMatchingDistribution(
-          roundId,
-          signerOrProvider,
-          roundData.matchingFundPayoutToken,
-          roundData.matchingPoolUSD
-        );
-        let applications: (ProjectApplication & {
-          matchingData?: MatchingStatsData;
-        })[] = !allApplications
-          ? []
-          : allApplications?.map((app) => {
-              const projectMatchingData = matchingData?.find(
-                (data) => data.projectId == app.projectId
-              );
-              return {
-                ...app,
-                matchingData: projectMatchingData,
-              };
-            });
-        const sorted = sortByMatchAmount(applications || []);
-        setApplications(sorted);
+        await Promise.all([
+          getOperatorData(),
+          getRoundData(),
+          getAllApplications(),
+        ]);
       } catch (err) {
         console.log(err);
         setPageError({ value: true, message: err + "An error occured." });
@@ -228,13 +191,64 @@ export default function RoundPage({
     };
 
     if (roundId) {
-      getData(chainId, roundId);
-      get(roundId as Address);
+      get(roundId as Address, chainId);
     } else {
       setIsPageLoading(false);
       setPageError({ value: true, message: "Grant not found" });
     }
   }, [roundId, chainId]);
+
+  useEffect(() => {
+    const getMatchingData = async () => {
+      if (isPageLoading) return;
+
+      const signerOrProvider =
+        chainId == ChainId.PGN
+          ? new ethers.providers.JsonRpcProvider(
+              "https://rpc.publicgoods.network",
+              chainId
+            )
+          : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
+          ? new ethers.providers.JsonRpcProvider(
+              "https://rpcapi.fantom.network/",
+              chainId
+            )
+          : new ethers.providers.InfuraProvider(
+              chainId,
+              process.env.NEXT_PUBLIC_INFURA_API_KEY
+            );
+
+      // matching data
+      if (!roundData) {
+        setApplications(allApplications);
+        return;
+      }
+
+      const matchingData = await fetchMatchingDistribution(
+        roundId,
+        signerOrProvider,
+        roundData.matchingFundPayoutToken,
+        roundData.matchingPoolUSD
+      );
+      let applications: (ProjectApplication & {
+        matchingData?: MatchingStatsData;
+      })[] = !allApplications
+        ? []
+        : allApplications?.map((app) => {
+            const projectMatchingData = matchingData?.find(
+              (data) => data.projectId == app.projectId
+            );
+            return {
+              ...app,
+              matchingData: projectMatchingData,
+            };
+          });
+      const sorted = sortByMatchAmount(applications || []);
+      setApplications(sorted);
+    };
+
+    getMatchingData();
+  }, [roundData]);
 
   useEffect(() => {
     setIsRoundOperator(false);
@@ -273,6 +287,24 @@ export default function RoundPage({
     content: () => reportTemplateRef.current,
   });
 
+  const refetchRoundInfo = async () => {
+    const {
+      data: roundInfoData,
+      error: roundInfoErr,
+      success: roundInfoSuccess,
+    } = await getRoundInfo(roundId);
+    if (!roundInfoSuccess) throw new Error(roundInfoErr);
+    const formattedRoundInfo = roundInfoData?.preamble
+      ? {
+          ...roundInfoData,
+          preamble: roundInfoData.preamble
+            .replace(/<\/?p[^>]*>/g, "")
+            .replaceAll("<br>", "\n"),
+        }
+      : roundInfoData;
+    setRoundInfo(formattedRoundInfo);
+  };
+
   const uploadRoundInfo = async (body: RoundInfo, roundId: string) => {
     try {
       setUploading(true);
@@ -282,7 +314,7 @@ export default function RoundPage({
       console.log(e);
       alert("Trouble uploading file");
     } finally {
-      // await refetchRoundInfo();
+      await refetchRoundInfo();
       router.refresh();
       setTimeout(() => {
         setIsEditorOpen(false);
@@ -355,12 +387,12 @@ export default function RoundPage({
   return (
     <>
       <div>
-        {!roundId || pageError.value || !roundData ? (
+        {isPageLoading ? (
+          <Loading />
+        ) : !roundId || pageError.value || !roundData ? (
           <>
             <NotFound />
           </>
-        ) : isPageLoading ? (
-          <Loading />
         ) : (
           <div
             id="report"
