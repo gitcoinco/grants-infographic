@@ -680,15 +680,16 @@ export const getPayoutTokenOptions = (chainId: ChainId): PayoutToken[] => {
 
 export const graphql_fetch = async (
   query: string,
-  chainId: ChainId,
-
+  endpoint: string,
   variables: object = {},
   fromProjectRegistry = false
 ) => {
-  let endpoint = `https://gateway.thegraph.com/api/db01d72285a54fa4864050a870e9b16d/subgraphs/id/Ba4YGqqyYVFd55zcQnXS3XYTjJARKe93LY6qNgFbrHQz`;
-  if (fromProjectRegistry) {
-    endpoint = endpoint.replace("grants-round", "grants-hub");
-  }
+  // let endpoint = `
+  // // https://gateway.thegraph.com/api/db01d72285a54fa4864050a870e9b16d/subgraphs/id/Ba4YGqqyYVFd55zcQnXS3XYTjJARKe93LY6qNgFbrHQz
+  // `;
+  // if (fromProjectRegistry) {
+  //   endpoint = endpoint.replace("grants-round", "grants-hub");
+  // }
 
   return fetch(endpoint, {
     method: "POST",
@@ -763,9 +764,11 @@ export const formatCurrency = (value: BigNumber, decimal: number) => {
 };
 
 export const findRoundById = (rounds: Round[], roundId: string) => {
-  return roundId
-    ? rounds.find((round) => round.id == getAddress(roundId))
+  const round = roundId
+    ? rounds?.find((round) => round.id?.toLowerCase() == getAddress(roundId)?.toLowerCase())
     : undefined;
+    console.log(round);
+    return round;
 };
 
 export const defaultIntro = `Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.`;

@@ -85,6 +85,7 @@ export default function RoundPage({
   const [isPageLoading, setIsPageLoading] = useState(false);
 
   useEffect(() => {
+    console.log(roundData)
     const get = async (roundId: Address) => {
       try {
         setIsPageLoading(true);
