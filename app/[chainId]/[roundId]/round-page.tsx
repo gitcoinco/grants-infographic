@@ -5,7 +5,6 @@ import TweetEmbed from "react-tweet-embed";
 import { fetchMatchingDistribution } from "../../../api/round";
 import {
   MatchingStatsData,
-  PayoutToken,
   ProjectApplication,
   Round,
   RoundInfo,
@@ -25,7 +24,6 @@ import {
   defaultTweetURL,
   formatAmount,
   getGranteeLink,
-  payoutTokens,
   pinToIPFS,
   sortByMatchAmount,
 } from "../../../api/utils";
@@ -36,7 +34,6 @@ import { markdownImgRegex } from "../../../constants";
 import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
-import * as Papa from "papaparse";
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
   loading: () => <>Loading...</>,
@@ -259,50 +256,6 @@ export default function RoundPage({
     return tweetId || "";
   };
 
-  function downloadCSV() {
-    const data = createApplicationsCSV(applications!);
-    const csvData = Papa.unparse(data as any);
-    const fileName = `${roundData.metadata?.name} - Round Results.csv`;
-    exportData(csvData, fileName, "text/csv;charset=utf-8;");
-  }
-
-  const exportData = (data: any, fileName: string, type: string) => {
-    const blob = new Blob([data], { type });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const createApplicationsCSV = (
-    applications: (ProjectApplication & { matchingData?: MatchingStatsData })[]
-  ) => {
-    const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
-      (t) => t.address.toLowerCase() == roundData.token.toLowerCase()
-    )[0];
-
-    const tokenFieldName = `${matchingFundPayoutToken.name} MATCH`;
-
-    const list = applications.map((proj, index) => {
-      const tokenAmount = proj.matchingData?.matchAmount || 0;
-
-      return {
-        RANK: index + 1,
-        "PROJECT NAME": proj.metadata.application.project.title,
-        CONTRIBUTIONS: formatAmount(proj.votes, true),
-        "$ CONTRIBUTED": `$${formatAmount(proj.amountUSD?.toFixed(2))}`,
-        "$ MATCH": `$${formatAmount(
-          (proj.matchingData?.matchAmountUSD || 0).toFixed(2)
-        )}`,
-        [tokenFieldName]: `${formatAmount(tokenAmount, true)} ${
-          matchingFundPayoutToken.name
-        }`,
-      };
-    });
-    return JSON.stringify(list);
-  };
   return (
     <>
       <div>
@@ -509,17 +462,9 @@ export default function RoundPage({
                   <div className="flex flex-col gap-16 max-w-screen">
                     <Card>
                       <div className="max-w-[75vw]">
-                        <div className="flex items-center justify-between gap-4 sm:flex-row flex-col mb-6 sm:px-6 lg:px-8">
-                          <h2 className="text-blue text-3xl text-center font-grad font-normal">
-                            Leaderboard
-                          </h2>
-                          <button
-                            onClick={downloadCSV}
-                            className="group z-50 cursor-pointer hover:border-dark transition-all duration-300 rounded-[12px] h-fit w-fit border-2 border-green text-green py-1 px-4"
-                          >
-                            Download results
-                          </button>
-                        </div>
+                        <h2 className="text-blue text-3xl mb-6 text-center font-grad font-normal">
+                          Leaderboard
+                        </h2>
                         <div className="overflow-x-auto">
                           <div className="mt-8 flow-root">
                             <div className="overflow-x-auto">
