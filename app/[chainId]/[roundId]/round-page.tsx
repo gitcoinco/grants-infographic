@@ -2,9 +2,16 @@
 import { Address, useAccount, useSignMessage } from "wagmi";
 import { useEffect, useRef, useState } from "react";
 import TweetEmbed from "react-tweet-embed";
-import { fetchMatchingDistribution } from "../../../api/round";
+import {
+  fetchMatchingDistribution,
+  fetchPayoutTokenPrice,
+  getRoundById,
+  getRoundInfo,
+  getProjectsApplications,
+} from "../../../api/round";
 import {
   MatchingStatsData,
+  PayoutToken,
   ProjectApplication,
   Round,
   RoundInfo,
@@ -24,6 +31,7 @@ import {
   defaultTweetURL,
   formatAmount,
   getGranteeLink,
+  payoutTokens,
   pinToIPFS,
   sortByMatchAmount,
 } from "../../../api/utils";
@@ -40,22 +48,26 @@ const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
 });
 
 export default function RoundPage({
-  roundData,
-  roundInfo,
-  allApplications,
+  // roundData,
+  // roundInfo,
+  // allApplications,
   chainId,
   roundId,
-  refetchRoundInfo,
-}: {
-  roundData: Round;
-  roundInfo: RoundInfo;
-  allApplications: ProjectApplication[];
-  roundId: string;
+}: // refetchRoundInfo,
+{
+  // roundData: Round;
+  // roundInfo: RoundInfo;
+  // allApplications: ProjectApplication[];
+  roundId: Address;
   chainId: number;
-  refetchRoundInfo: () => void;
+  // refetchRoundInfo: () => void;
 }) {
   const router = useRouter();
   const { isConnected, address } = useAccount();
+  const [roundData, setRoundData] = useState<Round>();
+  const [roundInfo, setRoundInfo] = useState<RoundInfo>();
+  const [allApplications, setAllApplications] =
+    useState<ProjectApplication[]>();
 
   const [isRoundOperator, setIsRoundOperator] = useState(false);
   const {
@@ -82,14 +94,28 @@ export default function RoundPage({
   const [pageError, setPageError] = useState({ value: false, message: "" });
   const reportTemplateRef = useRef(null);
 
-  const [isPageLoading, setIsPageLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   useEffect(() => {
-    const get = async (roundId: Address) => {
-      try {
-        setIsPageLoading(true);
+    async function getRoundData() {
+      let roundData: Round | undefined = undefined;
 
-        // matching data
+      try {
+        const { data } = await getRoundById(chainId, roundId);
+
+        if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
+          throw new Error("No round metadata");
+        const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
+          (t) => t.address.toLowerCase() == data?.token.toLowerCase()
+        )[0];
+        const tokenAmount = parseFloat(
+          ethers.utils.formatUnits(
+            data.matchAmount,
+            matchingFundPayoutToken.decimal
+          )
+        );
+
+        // get payout token price
         const signerOrProvider =
           chainId == ChainId.PGN
             ? new ethers.providers.JsonRpcProvider(
@@ -106,25 +132,56 @@ export default function RoundPage({
                 process.env.NEXT_PUBLIC_INFURA_API_KEY
               );
 
-        const matchingData = await fetchMatchingDistribution(
+        const price = await fetchPayoutTokenPrice(
           roundId,
           signerOrProvider,
-          roundData.matchingFundPayoutToken,
-          roundData.matchingPoolUSD
+          matchingFundPayoutToken
         );
-        let applications: (ProjectApplication & {
-          matchingData?: MatchingStatsData;
-        })[] = allApplications?.map((app) => {
-          const projectMatchingData = matchingData?.find(
-            (data) => data.projectId == app.projectId
-          );
-          return {
-            ...app,
-            matchingData: projectMatchingData,
-          };
-        });
-        const sorted = sortByMatchAmount(applications || []);
-        setApplications(sorted);
+        const rate = price ? price : data.matchAmountUSD / tokenAmount;
+        const matchingPoolUSD =
+          data.metadata?.quadraticFundingConfig?.matchingFundsAvailable * rate;
+
+        roundData = { ...data, matchingPoolUSD, rate, matchingFundPayoutToken };
+
+        setRoundData(roundData);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    const getAllApplications = async () => {
+      // applications data
+      const applications = await getProjectsApplications(roundId, chainId);
+      setAllApplications(applications);
+    };
+
+    const getOperatorData = async () => {
+      // ipfs round data
+      const {
+        data: roundInfoData,
+        error: roundInfoErr,
+        success: roundInfoSuccess,
+      } = await getRoundInfo(roundId);
+      if (!roundInfoSuccess) throw new Error(roundInfoErr);
+      const formattedRoundInfo = roundInfoData?.preamble
+        ? {
+            ...roundInfoData,
+            preamble: roundInfoData.preamble
+              .replace(/<\/?p[^>]*>/g, "")
+              .replaceAll("<br>", "\n"),
+          }
+        : roundInfoData;
+      setRoundInfo(formattedRoundInfo);
+    };
+
+    const get = async (roundId: Address, chainId: number) => {
+      try {
+        setIsPageLoading(true);
+        await Promise.all([
+          getOperatorData(),
+          getRoundData(),
+          getAllApplications(),
+        ]);
       } catch (err) {
         console.log(err);
         setPageError({ value: true, message: err + "An error occured." });
@@ -132,13 +189,66 @@ export default function RoundPage({
         setIsPageLoading(false);
       }
     };
-    roundId
-      ? get(roundId as Address)
-      : () => {
-          setIsPageLoading(false);
-          setPageError({ value: true, message: "Grant not found" });
-        };
+
+    if (roundId) {
+      get(roundId as Address, chainId);
+    } else {
+      setIsPageLoading(false);
+      setPageError({ value: true, message: "Grant not found" });
+    }
   }, [roundId, chainId]);
+
+  useEffect(() => {
+    const getMatchingData = async () => {
+      if (isPageLoading) return;
+
+      const signerOrProvider =
+        chainId == ChainId.PGN
+          ? new ethers.providers.JsonRpcProvider(
+              "https://rpc.publicgoods.network",
+              chainId
+            )
+          : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
+          ? new ethers.providers.JsonRpcProvider(
+              "https://rpcapi.fantom.network/",
+              chainId
+            )
+          : new ethers.providers.InfuraProvider(
+              chainId,
+              process.env.NEXT_PUBLIC_INFURA_API_KEY
+            );
+
+      // matching data
+      if (!roundData) {
+        setApplications(allApplications);
+        return;
+      }
+
+      const matchingData = await fetchMatchingDistribution(
+        roundId,
+        signerOrProvider,
+        roundData.matchingFundPayoutToken,
+        roundData.matchingPoolUSD
+      );
+      let applications: (ProjectApplication & {
+        matchingData?: MatchingStatsData;
+      })[] = !allApplications
+        ? []
+        : allApplications?.map((app) => {
+            const projectMatchingData = matchingData?.find(
+              (data) => data.projectId == app.projectId
+            );
+            return {
+              ...app,
+              matchingData: projectMatchingData,
+            };
+          });
+      const sorted = sortByMatchAmount(applications || []);
+      setApplications(sorted);
+    };
+
+    getMatchingData();
+  }, [roundData]);
 
   useEffect(() => {
     setIsRoundOperator(false);
@@ -176,6 +286,24 @@ export default function RoundPage({
   const createPDF = useReactToPrint({
     content: () => reportTemplateRef.current,
   });
+
+  const refetchRoundInfo = async () => {
+    const {
+      data: roundInfoData,
+      error: roundInfoErr,
+      success: roundInfoSuccess,
+    } = await getRoundInfo(roundId);
+    if (!roundInfoSuccess) throw new Error(roundInfoErr);
+    const formattedRoundInfo = roundInfoData?.preamble
+      ? {
+          ...roundInfoData,
+          preamble: roundInfoData.preamble
+            .replace(/<\/?p[^>]*>/g, "")
+            .replaceAll("<br>", "\n"),
+        }
+      : roundInfoData;
+    setRoundInfo(formattedRoundInfo);
+  };
 
   const uploadRoundInfo = async (body: RoundInfo, roundId: string) => {
     try {
@@ -259,12 +387,12 @@ export default function RoundPage({
   return (
     <>
       <div>
-        {!roundId || pageError.value || !roundData ? (
+        {isPageLoading ? (
+          <Loading />
+        ) : !roundId || pageError.value || !roundData ? (
           <>
             <NotFound />
           </>
-        ) : isPageLoading ? (
-          <Loading />
         ) : (
           <div
             id="report"
