@@ -24,6 +24,7 @@ export default function Stats({
    const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
      (t) => t.address.toLowerCase() == round.token.toLowerCase()
    )[0];
+   console.log(round.matchAmount);
    const tokenAmount = parseFloat(
      ethers.utils.formatUnits(
        round.matchAmount,
@@ -53,13 +54,13 @@ export default function Stats({
             <p className="text-orange text-xl pb-2 font-grad leading-none">
               {formatAmount(tokenAmount, true)} {matchingFundPayoutToken.name}{" "}
               <br />
-              ($ {formatAmount(round.matchingPoolUSD || 0)})
+              (${formatAmount(round.matchingPoolUSD || 0)})
             </p>
             <p className="sm:text-base text-sm">Matching Pool</p>
           </div>
           <div className="flex flex-col justify-between">
             <p className="text-orange text-xl pb-2 font-grad">
-              $ {formatAmount(totalCrowdfunded.toFixed(2))}
+              ${formatAmount(totalCrowdfunded.toFixed(2))}
             </p>
             <p className="sm:text-base text-sm">Total USD Crowdfunded</p>
           </div>

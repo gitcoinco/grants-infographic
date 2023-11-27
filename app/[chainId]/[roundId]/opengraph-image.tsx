@@ -199,7 +199,7 @@ export default async function GET(params: GrantPageProps) {
               >
                 <p style={{ color: "#F17A4C", fontSize: 24, maxWidth: 160 }}>
                   {formatAmount(tokenAmount, true)}{" "}
-                  {roundData?.matchingFundPayoutToken.name} (${" "}
+                  {roundData?.matchingFundPayoutToken.name} ($
                   {formatAmount(roundData?.matchingPoolUSD || 0)})
                 </p>
 
@@ -215,7 +215,7 @@ export default async function GET(params: GrantPageProps) {
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
-                  ${" "}
+                  $
                   {!!roundData?.amountUSD &&
                     formatAmount(roundData.amountUSD.toFixed(2))}
                 </p>
