@@ -388,7 +388,7 @@ export default function RoundPage({
   function downloadCSV() {
     const data = createApplicationsCSV(applications!);
     const csvData = Papa.unparse(data as any);
-    const fileName = `${roundData.metadata?.name} - Round Results.csv`;
+    const fileName = `${roundData?.metadata?.name} - Round Results.csv`;
     exportData(csvData, fileName, "text/csv;charset=utf-8;");
   }
 
@@ -405,6 +405,7 @@ export default function RoundPage({
   const createApplicationsCSV = (
     applications: (ProjectApplication & { matchingData?: MatchingStatsData })[]
   ) => {
+    if (!roundData) return;
     const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
       (t) => t.address.toLowerCase() == roundData.token.toLowerCase()
     )[0];
