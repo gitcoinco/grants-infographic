@@ -217,7 +217,7 @@ export const getProjectsApplications = async (
   chainId: number
 ) => {
   try {
-    const resp = await fetch(
+    const resp = await fetchWithTimeout(
       `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
         roundId
       )}/applications.json`,
