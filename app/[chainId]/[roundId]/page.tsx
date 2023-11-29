@@ -5,6 +5,7 @@ import {
   fetchMatchingDistribution,
   getRoundInfo,
   fetchPayoutTokenPrice,
+  getRoundsByChainId,
 } from "../../../api/round";
 import {
   MatchingStatsData,
@@ -27,6 +28,7 @@ import { revalidateTag } from "next/cache";
 
 export interface GrantPageProps {
   params: { chainId: string; roundId: string };
+  searchParams: { search: string | undefined };
 }
 
 async function getData(chainId: number, roundId: Address) {
@@ -34,11 +36,13 @@ async function getData(chainId: number, roundId: Address) {
     roundInfo: RoundInfo | undefined = undefined,
     applications:
       | (ProjectApplication & { matchingData?: MatchingStatsData })[]
-      | undefined = undefined;
+      | undefined = undefined,
+    allRoundsList: Round[] | undefined = undefined;
 
   try {
-    const { data } = await getRoundById(chainId, roundId);
+    const { data, allRounds } = await getRoundById(chainId, roundId);
 
+    allRoundsList = allRounds;
     if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
       throw new Error("No round metadata");
     const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
@@ -102,7 +106,7 @@ async function getData(chainId: number, roundId: Address) {
   } catch (err) {
     console.log(err);
   }
-  return { roundData, roundInfo, applications };
+  return { roundData, roundInfo, applications, allRounds: allRoundsList };
 }
 
 export async function generateMetadata(
@@ -143,11 +147,13 @@ export async function generateMetadata(
 
 export default async function Page({
   params: { chainId, roundId },
+  searchParams: { search },
 }: GrantPageProps) {
-  const { roundData, roundInfo, applications } = await getData(
+  const { roundData, roundInfo, applications, allRounds } = await getData(
     Number(chainId),
     roundId as Address
   );
+  const searchedRoundsListData = search ? await getRoundsByChainId(Number(search)) : undefined;
 
   const refetchRoundInfo = async () => {
     "use server";
@@ -161,6 +167,7 @@ export default async function Page({
       chainId={Number(chainId)}
       roundId={roundId}
       refetchRoundInfo={refetchRoundInfo}
+      allRounds={searchedRoundsListData?.data || allRounds!}
     />
   );
 }

@@ -24,7 +24,6 @@ export default function Stats({
    const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
      (t) => t.address.toLowerCase() == round.token.toLowerCase()
    )[0];
-   console.log(round.matchAmount);
    const tokenAmount = parseFloat(
      ethers.utils.formatUnits(
        round.matchAmount,

@@ -37,6 +37,9 @@ import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import * as Papa from "papaparse";
+import heroBg from "/assets/hero-bg.svg";
+import Header from "../../../components/header";
+
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
   loading: () => <>Loading...</>,
@@ -49,6 +52,7 @@ export default function RoundPage({
   chainId,
   roundId,
   refetchRoundInfo,
+  allRounds,
 }: {
   roundData: Round;
   roundInfo: RoundInfo;
@@ -56,6 +60,7 @@ export default function RoundPage({
   roundId: string;
   chainId: number;
   refetchRoundInfo: () => void;
+  allRounds: Round[];
 }) {
   const router = useRouter();
   const { isConnected, address } = useAccount();
@@ -283,7 +288,7 @@ export default function RoundPage({
       (t) => t.address.toLowerCase() == roundData.token.toLowerCase()
     )[0];
 
-    const tokenFieldName = `${matchingFundPayoutToken.name} MATCH`;
+    const tokenFieldName = `MATCHED ${matchingFundPayoutToken.name}`;
 
     const list = applications.map((proj, index) => {
       const tokenAmount = proj.matchingData?.matchAmount || 0;
@@ -292,8 +297,8 @@ export default function RoundPage({
         RANK: index + 1,
         "PROJECT NAME": proj.metadata.application.project.title,
         CONTRIBUTIONS: formatAmount(proj.votes, true),
-        "$ CONTRIBUTED": `$${formatAmount(proj.amountUSD?.toFixed(2))}`,
-        "$ MATCH": `$${formatAmount(
+        "CROWDFUNDED USD": `$${formatAmount(proj.amountUSD?.toFixed(2))}`,
+        "MATCHED USD": `$${formatAmount(
           (proj.matchingData?.matchAmountUSD || 0).toFixed(2)
         )}`,
         [tokenFieldName]: `${formatAmount(tokenAmount, true)} ${
@@ -305,7 +310,15 @@ export default function RoundPage({
   };
   return (
     <>
-      <div>
+      <div className="relative">
+        <Image
+          src={heroBg}
+          alt="gitcoin logo"
+          className="absolute top-0 right-0"
+        />
+        <Header allRounds={allRounds} />
+      </div>
+      <div className="p-6">
         {!roundId || pageError.value || !roundData ? (
           <>
             <NotFound />
@@ -549,13 +562,13 @@ export default function RoundPage({
                                         scope="col"
                                         className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-black"
                                       >
-                                        $ Contributed
+                                        Crowdfunded USD
                                       </th>
                                       <th
                                         scope="col"
                                         className="relative py-3 pl-3 pr-4 text-left text-xs font-semibold uppercase tracking-wide text-black"
                                       >
-                                        $ Match
+                                        Matched USD
                                       </th>
                                     </tr>
                                   </thead>
