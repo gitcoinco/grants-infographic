@@ -92,34 +92,63 @@ export type RoundProject = {
 export const getRoundById = async (
   chainId: number,
   roundId: string
-): Promise<{ data: Round | undefined; success: boolean; error: string }> => {
+): Promise<{
+  data: Round | undefined;
+  success: boolean;
+  error: string;
+  allRounds: Round[] | undefined;
+}> => {
   const allRounds = await getRoundsByChainId(chainId);
   if (!allRounds.success)
     return {
       success: false,
       error: allRounds.error,
       data: undefined,
+      allRounds: undefined,
     };
   const round = findRoundById(allRounds.data || [], roundId);
   return {
     success: true,
     error: "",
     data: round,
+    allRounds: allRounds.data,
   };
 };
+async function fetchWithTimeout(url: string, options = {}) {
+  const timeout = 5000;
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  const response = await fetch(url, {
+    ...options,
+    signal: controller.signal,
+  });
+  clearTimeout(id);
+
+  return response;
+}
 
 export const getRoundsByChainId = async (
   chainId: number
 ): Promise<{ data: Round[] | undefined; success: boolean; error: string }> => {
   try {
-    const resp = await fetch(
+    const resp = await fetchWithTimeout(
       `https://indexer-production.fly.dev/data/${chainId}/rounds.json`,
       { next: { revalidate: 3600 } }
     );
     const data = (await resp.json()) as Round[];
+    const filteredData = data?.filter(
+      (round) =>
+        !!round.metadata?.name &&
+        !!round.metadata.quadraticFundingConfig?.matchingFundsAvailable &&
+        !!round.votes &&
+        !round.metadata?.name.toLowerCase().includes("test") &&
+        round.amountUSD > 50
+    );
 
     return {
-      data,
+      data: filteredData,
       success: true,
       error: "",
     };
@@ -366,7 +395,7 @@ export async function fetchPayoutTokenPrice(
     const price = await redstone.getHistoricalPrice(
       token.redstoneTokenId || token.name,
       {
-        date: payoutDate, 
+        date: payoutDate,
       }
     );
     return price.value;

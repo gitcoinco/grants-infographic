@@ -19,7 +19,7 @@ type OptionType = {
   label: string;
 };
 
-export default function Header() {
+export default function Header({ allRounds }: { allRounds: Round[] }) {
   const pathname = usePathname();
   const [filters, setFilters] = useState({
     chainId: pathname?.split("/")[1] as string,
@@ -38,8 +38,7 @@ export default function Header() {
     if (!newChainId) return;
     const init = async () => {
       if (!!allRounds?.length) return;
-      const data = await getRounds(newChainId);
-      setAllRounds(data);
+      router.push(`${pathname}?search=${newChainId}`);
     };
 
     init();
@@ -68,30 +67,6 @@ export default function Header() {
       }) || [];
 
   const [roundOptions, setRoundOptions] = useState<OptionType[]>([]);
-  const [allRounds, setAllRounds] = useState<Round[]>();
-
-  const getRounds = useCallback(async (chainId: string) => {
-    if (!chainId) return;
-    try {
-      const { data, error, success } = await getRoundsByChainId(
-        Number(chainId)
-      );
-      if (!success) throw new Error(error);
-
-      const filteredData = data?.filter(
-        (round) =>
-          !!round.metadata?.name &&
-          !!round.metadata.quadraticFundingConfig?.matchingFundsAvailable &&
-          !!round.votes &&
-          !round.metadata?.name.toLowerCase().includes("test") &&
-          round.amountUSD > 50
-        // && dayjs.unix(Number(round.roundEndTime)).isAfter(dayjs(minDate))
-      );
-      return filteredData;
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
 
   useEffect(() => {
     setRoundOptions(
@@ -107,8 +82,7 @@ export default function Header() {
   const handleChainChange = async (option: SingleValue<OptionType>) => {
     setNewFilters({ ...newFilters, chainId: option?.value || "" });
     if (!option?.value) return;
-    const data = await getRounds(option.value);
-    setAllRounds(data);
+    router.push(`${pathname}?search=${option.value}`);
   };
 
   const handleRoundChange = (option: SingleValue<OptionType>) => {
