@@ -41,7 +41,6 @@ async function getData(chainId: number, roundId: Address) {
 
   try {
     const { data, allRounds } = await getRoundById(chainId, roundId);
-
     allRoundsList = allRounds;
     if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
       throw new Error("No round metadata");
@@ -77,6 +76,8 @@ async function getData(chainId: number, roundId: Address) {
       signerOrProvider,
       matchingFundPayoutToken
     );
+    const isDirectGrant =
+      !data.metadata?.quadraticFundingConfig?.matchingFundsAvailable;
     const rate = price ? price : data.matchAmountUSD / tokenAmount;
     const matchingPoolUSD =
       data.metadata?.quadraticFundingConfig?.matchingFundsAvailable * rate;
@@ -153,11 +154,14 @@ export default async function Page({
     Number(chainId),
     roundId as Address
   );
-  const searchedRoundsListData = search ? await getRoundsByChainId(Number(search)) : undefined;
+  const searchedRoundsListData = search
+    ? await getRoundsByChainId(Number(search))
+    : undefined;
 
   const refetchRoundInfo = async () => {
     "use server";
-    revalidateTag("roundInfo");
+    // await revalidateTag("roundInfo");
+    await getRoundInfo(roundId);
   };
   return (
     <RoundPage
