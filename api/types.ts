@@ -241,6 +241,8 @@ export type RoundInfo = {
     id: string;
     description: string;
   }[]
+  logo?: string;
+  banner?: string;
 }
 
 export type MatchingStatsData = {

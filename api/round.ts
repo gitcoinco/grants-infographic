@@ -114,7 +114,7 @@ export const getRoundById = async (
     allRounds: allRounds.data,
   };
 };
-async function fetchWithTimeout(url: string, options = {}) {
+export async function fetchWithTimeout(url: string, options = {}) {
   const timeout = 5000;
 
   const controller = new AbortController();
@@ -390,7 +390,6 @@ export async function fetchPayoutTokenPrice(
 
   if (fundsDistributed?.length) {
     const payoutTimestamp = (await fundsDistributed[0].getBlock()).timestamp;
-
     const payoutDate = dayjs.unix(Number(payoutTimestamp)).toString();
     const price = await redstone.getHistoricalPrice(
       token.redstoneTokenId || token.name,
@@ -413,7 +412,8 @@ export async function fetchMatchingDistribution(
     if (!roundId) {
       throw new Error("Round ID is required");
     }
-    let matchingDistribution: MatchingStatsData[] = [];
+    let matchingDistribution: MatchingStatsData[] = [],
+      payoutTxnHash;
     const roundImplementation = new ethers.Contract(
       roundId,
       roundImplementationAbi,
@@ -426,10 +426,11 @@ export async function fetchMatchingDistribution(
       signerOrProvider
     );
     const distributionMetaPtrRes = await payoutStrategy.distributionMetaPtr();
-    const distributionMetaPtr = distributionMetaPtrRes.pointer;
+    const distributionMetaPtr = distributionMetaPtrRes?.pointer;
     if (distributionMetaPtr !== "") {
       // fetch distribution from IPFS
       const matchingDistributionRes = await fetchFromIPFS(distributionMetaPtr);
+
       matchingDistribution = matchingDistributionRes.matchingDistribution;
       // parse matchAmountInToken to a valid BigNumber + add matchAmount
       matchingDistribution = matchingDistribution.map((distribution) => {
@@ -443,8 +444,15 @@ export async function fetchMatchingDistribution(
             distribution.matchPoolPercentage * roundMatchingPoolUSD,
         };
       });
+
+      const fundsDistributed = await payoutStrategy.queryFilter(
+        "FundsDistributed"
+      );
+
+      if (fundsDistributed?.length)
+        payoutTxnHash = fundsDistributed[0].transactionHash;
     }
-    return matchingDistribution;
+    return { matchingDistribution, payoutTxnHash };
   } catch (err) {
     console.log(err);
   }

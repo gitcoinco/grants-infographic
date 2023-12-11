@@ -10,6 +10,14 @@ import {
   Round,
   RoundInfo,
 } from "../../../api/types";
+
+import ReactCrop, {
+  centerCrop,
+  makeAspectCrop,
+  Crop,
+  PixelCrop,
+} from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useReactToPrint } from "react-to-print";
@@ -19,13 +27,17 @@ import Card from "../../../components/card";
 import projectsDivider from "/assets/projects-divider.svg";
 import downloadIcon from "/assets/download-icon.svg";
 import editIcon from "/assets/edit-icon.svg";
+import defaultBanner from "/assets/default-banner.svg";
+import defaultLogo from "/assets/default-logo.svg";
 import dynamic from "next/dynamic";
 import {
   ChainId,
   defaultTweetURL,
   formatAmount,
+  getBlockExplorerTxLink,
   getGranteeLink,
   payoutTokens,
+  pinFileToIPFS,
   pinToIPFS,
   sortByMatchAmount,
 } from "../../../api/utils";
@@ -39,6 +51,8 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import * as Papa from "papaparse";
 import heroBg from "/assets/hero-bg.svg";
 import Header from "../../../components/header";
+import Button from "../../../components/button";
+import IpfsImage from "../../../components/ipfs-image";
 
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
@@ -59,12 +73,12 @@ export default function RoundPage({
   allApplications: ProjectApplication[];
   roundId: string;
   chainId: number;
-  refetchRoundInfo: () => void;
+  refetchRoundInfo: () => Promise<void>;
   allRounds: Round[];
 }) {
   const router = useRouter();
   const { isConnected, address } = useAccount();
-
+  const [payoutTxnHash, setPayoutTxnHash] = useState<string>();
   const [isRoundOperator, setIsRoundOperator] = useState(false);
   const {
     data: signData,
@@ -120,10 +134,12 @@ export default function RoundPage({
           roundData.matchingFundPayoutToken,
           roundData.matchingPoolUSD
         );
+        setPayoutTxnHash(matchingData?.payoutTxnHash);
+
         let applications: (ProjectApplication & {
           matchingData?: MatchingStatsData;
         })[] = allApplications?.map((app) => {
-          const projectMatchingData = matchingData?.find(
+          const projectMatchingData = matchingData?.matchingDistribution?.find(
             (data) => data.projectId == app.projectId
           );
           return {
@@ -200,8 +216,39 @@ export default function RoundPage({
         setIsEditorOpen(false);
         setIsTweetsEditorOpen(false);
         setUploading(false);
-      }, 2000);
+      }, 1000);
     }
+  };
+
+  const [logo, setLogo] = useState<Blob>();
+  const inputLogo = useRef<any>(null);
+
+  const uploadFile = async (type: "banner" | "logo", file: Blob, e?: any) => {
+    try {
+      setUploading(true);
+      if (!file) return;
+      e && e.preventDefault();
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await pinFileToIPFS(formData);
+
+      const ipfsHash = res.IpfsHash;
+
+      const roundBody = { ...newRoundInfo, [type]: ipfsHash };
+      await uploadRoundInfo(roundBody, roundId);
+      type == "logo" && setLogo(undefined);
+      setUploading(false);
+    } catch (e) {
+      console.log(e);
+      setUploading(false);
+      alert("Trouble uploading file");
+    }
+  };
+
+  const handleLogoChange = (e: any) => {
+    setLogo(e.target.files[0]);
   };
 
   const defaultRoundInfo = {
@@ -211,6 +258,8 @@ export default function RoundPage({
     closing:
       "Welcome to this grant round! This is a placeholder text and we invite you, the round operator, to overwrite it with your own message. Use this space to introduce the round to participants, acknowledge those who funded the matching pool, or share personal insights and thoughts. Make this round uniquely yours.",
     projects: [],
+    logo: "",
+    banner: "",
   };
   const [newRoundInfo, setNewRoundInfo] = useState<RoundInfo>(defaultRoundInfo);
 
@@ -234,6 +283,8 @@ export default function RoundPage({
       projects: roundInfo?.projects?.length
         ? roundInfo.projects
         : defaultProjects,
+      logo: roundInfo?.logo || "",
+      banner: roundInfo?.banner || "",
     });
   };
 
@@ -255,6 +306,8 @@ export default function RoundPage({
       projects: roundInfo?.projects?.length
         ? roundInfo.projects
         : defaultProjects,
+      logo: roundInfo?.logo || "",
+      banner: roundInfo?.banner || "",
     });
   }, [roundInfo, applications]);
 
@@ -311,11 +364,6 @@ export default function RoundPage({
   return (
     <>
       <div className="relative">
-        <Image
-          src={heroBg}
-          alt="gitcoin logo"
-          className="absolute top-0 right-0"
-        />
         <Header allRounds={allRounds} />
       </div>
       <div className="p-6">
@@ -329,28 +377,100 @@ export default function RoundPage({
           <div
             id="report"
             ref={reportTemplateRef}
-            className="max-w-screen z-[100]"
+            className="max-w-screen z-[99]"
           >
             <div className="flex flex-col gap-16 max-w-screen">
-              <div className="flex justify-center mt-6">
-                <div className="">
+              <div className="flex w-full m-auto justify-center">
+                <div className="w-full  max-w-5xl m-auto">
+                  <BannerEditor
+                    canEdit={isRoundOperator && isSignSuccess}
+                    isUploading={isUploading}
+                    roundBanner={roundInfo?.banner}
+                    type="banner"
+                    saveBtnTitle="Save banner"
+                    onSave={(file: Blob) => uploadFile("banner", file)}
+                    roundName={roundData?.metadata?.name || ""}
+                  />
                   <div className="flex justify-between sm:gap-8 gap-4 sm:items-center mb-12 sm:flex-row flex-col">
-                    <h1 className="text-2xl sm:text-3xl font-semibold">
-                      {roundData.metadata?.name}
-                    </h1>
-                    <button
-                      onClick={createPDF}
-                      className="group z-50 cursor-pointer hover:border-dark transition-all duration-300 rounded-[12px] h-fit w-fit border-2 border-green text-green py-1 px-4 flex items-center gap-2"
-                    >
-                      <Image
-                        src={downloadIcon}
-                        width="12"
-                        height="12"
-                        alt="download icon"
-                        className="transition-all group-hover:translate-y-0.5"
-                      />
-                      PDF
-                    </button>
+                    <div className="flex items-center gap-4 pl-10">
+                      <div className="relative -mt-14 z-[30]">
+                        <input
+                          accept="image/*"
+                          type="file"
+                          id="Logo"
+                          ref={inputLogo}
+                          onChange={handleLogoChange}
+                          style={{ display: "none" }}
+                        />
+                        {!!logo && isRoundOperator && isSignSuccess ? (
+                          <div className=" flex flex-col gap-2 items-center relative ">
+                            <Image
+                              src={URL.createObjectURL(logo)}
+                              width="120"
+                              height="120"
+                              className="aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
+                              alt="logo"
+                            />
+                            <div className="absolute -bottom-10 ">
+                              <Button
+                                type="secondary"
+                                size="sm"
+                                onClick={(e) => uploadFile("logo", logo, e)}
+                                isLoading={isUploading}
+                              >
+                                Save logo
+                              </Button>
+                            </div>
+                          </div>
+                        ) : !!roundInfo?.logo ? (
+                          <IpfsImage
+                            type="logo"
+                            width={120}
+                            height={120}
+                            cid={roundInfo.logo}
+                            alt={`${roundData.metadata?.name} logo`}
+                            className="aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
+                          />
+                        ) : (
+                          <Image
+                            width="120"
+                            height="120"
+                            src={defaultLogo}
+                            alt=""
+                            className="aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
+                          />
+                        )}
+                        {isRoundOperator && isSignSuccess && (
+                          <button
+                            className="text-sm text-green cursor-pointer absolute right-4 top-4"
+                            disabled={isUploading}
+                            onClick={() => inputLogo.current?.click()}
+                          >
+                            <span
+                              className="text-sm text-green cursor-pointer"
+                              onClick={() => setIsEditorOpen(true)}
+                            >
+                              <EditIcon />
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                      <h1 className="text-2xl sm:text-4xl font-semibold">
+                        {roundData.metadata?.name}
+                      </h1>
+                    </div>
+                    <div className="z-50 group">
+                      <Button type="primary" onClick={createPDF}>
+                        <Image
+                          src={downloadIcon}
+                          width="12"
+                          height="12"
+                          alt="download icon"
+                          className="transition-all group-hover:translate-y-0.5"
+                        />
+                        <span>PDF</span>
+                      </Button>
+                    </div>
                   </div>
                   {!!applications?.length &&
                     !applications[0].matchingData?.matchAmountUSD && (
@@ -480,7 +600,7 @@ export default function RoundPage({
                     />
                   </div>
                 ) : (
-                  <div className="md:w-[80vw] max-w-7xl m-auto">
+                  <div className="md:w-[80vw] max-w-4xl m-auto">
                     {!!newRoundInfo?.tweetURLs?.length && (
                       <ResponsiveMasonry
                         columnsCountBreakPoints={{
@@ -494,7 +614,7 @@ export default function RoundPage({
                               : 1,
                         }}
                       >
-                        <Masonry gutter="1.5rem">
+                        <Masonry gutter="0.5rem">
                           {newRoundInfo.tweetURLs
                             .split(",")
                             .map((tweetUrl, index) => (
@@ -526,12 +646,24 @@ export default function RoundPage({
                           <h2 className="text-blue text-3xl text-center font-grad font-normal">
                             Leaderboard
                           </h2>
-                          <button
-                            onClick={downloadCSV}
-                            className="group z-50 cursor-pointer hover:border-dark transition-all duration-300 rounded-[12px] h-fit w-fit border-2 border-green text-green py-1 px-4"
-                          >
-                            Download results
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <Button type="primary" onClick={downloadCSV}>
+                              Download results
+                            </Button>
+                            {!!payoutTxnHash && (
+                              <Button type="primary">
+                                <a
+                                  href={getBlockExplorerTxLink(
+                                    chainId,
+                                    payoutTxnHash
+                                  )}
+                                  target="_blank"
+                                >
+                                  View transaction
+                                </a>
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         <div className="overflow-x-auto">
                           <div className="mt-8 flow-root">
@@ -663,3 +795,258 @@ const NotFound = () => {
     </div>
   );
 };
+
+function centerAspectCrop(
+  mediaWidth: number,
+  mediaHeight: number,
+  aspect: number
+) {
+  return centerCrop(
+    makeAspectCrop(
+      {
+        unit: "%",
+        width: 100,
+      },
+      aspect,
+      mediaWidth,
+      mediaHeight
+    ),
+    mediaWidth,
+    mediaHeight
+  );
+}
+
+const BannerEditor = ({
+  isUploading,
+  type,
+  saveBtnTitle,
+  onSave,
+  canEdit,
+  roundName,
+  roundBanner,
+}: {
+  isUploading: boolean;
+  type: "banner" | "logo";
+  saveBtnTitle: string;
+  onSave: (file: Blob) => Promise<void>;
+  canEdit: boolean;
+  roundName: string;
+  roundBanner?: string;
+}) => {
+  const [newImgSrc, setNewImgSrc] = useState("");
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const blobUrlRef = useRef("");
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [aspect, setAspect] = useState<number | undefined>(
+    type == "banner" ? 3.27 / 1 : 1
+  );
+  const inputBanner = useRef<any>(null);
+  function onSelectFile(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      setCrop(undefined);
+      const reader = new FileReader();
+      reader.addEventListener("load", () =>
+        setNewImgSrc(reader.result?.toString() || "")
+      );
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  }
+
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    if (aspect) {
+      const { width, height } = e.currentTarget;
+      setCrop(centerAspectCrop(width, height, aspect));
+    }
+  }
+
+  async function handleSaveCroppedImage() {
+    if (
+      completedCrop?.width &&
+      completedCrop?.height &&
+      imgRef.current &&
+      previewCanvasRef.current
+    ) {
+      canvasPreview(imgRef.current, previewCanvasRef.current, completedCrop);
+    }
+    const image = imgRef.current;
+    const previewCanvas = previewCanvasRef.current;
+    if (!image || !previewCanvas || !completedCrop) {
+      throw new Error("Crop canvas does not exist");
+    }
+
+    const offscreen = new OffscreenCanvas(
+      completedCrop.width,
+      completedCrop.height
+    );
+    const ctx = offscreen.getContext("2d");
+    if (!ctx) {
+      throw new Error("No 2d context");
+    }
+
+    ctx.drawImage(
+      previewCanvas,
+      0,
+      0,
+      previewCanvas.width,
+      previewCanvas.height,
+      0,
+      0,
+      offscreen.width,
+      offscreen.height
+    );
+
+    const blob = await offscreen.convertToBlob({
+      type: "image/webp",
+    });
+
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+    }
+    blobUrlRef.current = URL.createObjectURL(blob);
+
+    await onSave(blob);
+    setNewImgSrc("");
+  }
+
+  return (
+    <div>
+      <div className="flex justify-end mb-2 w-full">
+        {!!completedCrop && !!newImgSrc && canEdit && (
+          <>
+            <Button
+              type="secondary"
+              size="sm"
+              onClick={handleSaveCroppedImage}
+              isLoading={isUploading}
+            >
+              {saveBtnTitle}
+            </Button>
+
+            <canvas
+              ref={previewCanvasRef}
+              style={{
+                display: "none",
+              }}
+            />
+          </>
+        )}
+      </div>
+      <div className="z-[20] flex justify-center relative">
+        {!!newImgSrc && canEdit ? (
+          <ReactCrop
+            crop={crop}
+            onChange={(_, percentCrop) => setCrop(percentCrop)}
+            onComplete={(c) => setCompletedCrop(c)}
+            aspect={aspect}
+            minHeight={100}
+          >
+            <Image
+              ref={imgRef}
+              alt="Crop me"
+              src={newImgSrc}
+              onLoad={onImageLoad}
+              width="1440"
+              height="440"
+              className="w-full h-auto  object-fill rounded-xl border border-dark"
+            />
+          </ReactCrop>
+        ) : !!roundBanner ? (
+          <IpfsImage
+            type="banner"
+            cid={roundBanner}
+            alt={`${roundName} banner`}
+            width={1440}
+            height={440}
+            className={`w-full h-auto ${
+              type == "banner" ? "aspect-[3.27]" : "aspect-square"
+            } object-cover rounded-xl border border-dark`}
+          />
+        ) : (
+          <Image
+            src={defaultBanner}
+            alt=""
+            width="1440"
+            height="440"
+            className={`w-full h-auto ${
+              type == "banner" ? "aspect-[3.27]" : "aspect-square"
+            } object-fill rounded-xl border border-dark`}
+          />
+        )}
+        {canEdit && (
+          <>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onSelectFile}
+              ref={inputBanner}
+              style={{ display: "none" }}
+            />
+            <button
+              className="text-sm text-green cursor-pointer absolute right-5 top-5 flex  gap-2 items-center justify-end"
+              disabled={isUploading}
+              onClick={() => inputBanner.current?.click()}
+            >
+              <span className="text-xs">
+                Recommended size: <br />
+                1440 x 440
+              </span>
+              <span>
+                <EditIcon />
+              </span>
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export async function canvasPreview(
+  image: HTMLImageElement,
+  canvas: HTMLCanvasElement,
+  crop: PixelCrop
+) {
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("No 2d context");
+  }
+
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+
+  const pixelRatio = window.devicePixelRatio;
+
+  canvas.width = Math.floor(crop.width * scaleX * pixelRatio);
+  canvas.height = Math.floor(crop.height * scaleY * pixelRatio);
+
+  ctx.scale(pixelRatio, pixelRatio);
+  ctx.imageSmoothingQuality = "high";
+
+  const cropX = crop.x * scaleX;
+  const cropY = crop.y * scaleY;
+
+  const centerX = image.naturalWidth / 2;
+  const centerY = image.naturalHeight / 2;
+
+  ctx.save();
+
+  ctx.translate(-cropX, -cropY);
+  ctx.translate(centerX, centerY);
+  ctx.translate(-centerX, -centerY);
+  ctx.drawImage(
+    image,
+    0,
+    0,
+    image.naturalWidth,
+    image.naturalHeight,
+    0,
+    0,
+    image.naturalWidth,
+    image.naturalHeight
+  );
+
+  ctx.restore();
+}

@@ -9,6 +9,15 @@ import {
 import { BigNumber, ethers } from "ethers";
 import { getAddress } from "viem";
 
+export const getBlockExplorerTxLink = (chainId: ChainId, hash: string) => {
+if (chainId == ChainId.PGN) return `https://explorer.publicgoods.network/tx/${hash}`;
+if (chainId == ChainId.POLYGON) return `https://polygonscan.com/tx/${hash}`;
+if (chainId == ChainId.OPTIMISM_MAINNET_CHAIN_ID) return `https://optimistic.etherscan.io/tx/${hash}`;
+if (chainId == ChainId.ARBITRUM) return `https://arbiscan.io/tx/${hash}`;
+if (chainId == ChainId.AVALANCHE) return `https://avascan.info/blockchain/dexalot/tx/${hash}`;
+if (chainId == ChainId.MAINNET) return `https://etherscan.io/tx/${hash}`;
+if (chainId == ChainId.FANTOM_MAINNET_CHAIN_ID) return `https://ftmscan.com/tx/${hash}`;
+}
 export const getGranteeLink = (
   chainId: number,
   roundId: string,
@@ -749,6 +758,23 @@ export const pinToIPFS = async (
       },
       pinataContent: body,
     }),
+  }).then((resp) => {
+    if (resp.ok) {
+      return resp.json();
+    }
+
+    return Promise.reject(resp);
+  });
+};
+
+export const pinFileToIPFS = async (body: FormData) => {
+  return fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.NEXT_PUBLIC_PINATA_JWT}`,
+      accept: "application/json",
+    },
+    body,
   }).then((resp) => {
     if (resp.ok) {
       return resp.json();
