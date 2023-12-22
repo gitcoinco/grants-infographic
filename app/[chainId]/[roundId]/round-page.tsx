@@ -67,7 +67,7 @@ export default function RoundPage({
   roundId,
   refetchRoundInfo,
   allRounds,
-  payoutTxnHash
+  payoutTxnHash,
 }: {
   roundData: Round;
   roundInfo: RoundInfo;
@@ -399,18 +399,6 @@ export default function RoundPage({
                       <h1 className="text-2xl sm:text-4xl font-semibold">
                         {roundData.metadata?.name}
                       </h1>
-                    </div>
-                    <div className="z-50 group">
-                      <Button type="primary" onClick={createPDF}>
-                        <Image
-                          src={downloadIcon}
-                          width="12"
-                          height="12"
-                          alt="download icon"
-                          className="transition-all group-hover:translate-y-0.5"
-                        />
-                        <span>PDF</span>
-                      </Button>
                     </div>
                   </div>
                   {!!applications?.length &&
