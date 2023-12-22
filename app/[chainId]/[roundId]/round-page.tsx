@@ -404,9 +404,9 @@ export default function RoundPage({
                   {!!applications?.length &&
                     !applications[0].matchingData?.matchAmountUSD && (
                       <h5 className="text-lg text-blue">
-                        Note that this round&apos;s matching data is not
-                        finalized yet and the graph is displaying only
-                        crowdfunded amount
+                        The matching pool has not yet been distributed. After
+                        the funds are paid out, the funded projects and amounts
+                        will be displayed below and in the graph.
                       </h5>
                     )}
                   {/* <h2 className="text-blue mb-4 text-3xl font-grad">
