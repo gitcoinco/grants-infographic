@@ -1,5 +1,10 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import {
+  TransitionStartFunction,
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
 import gitcoinLogo from "/assets/gitcoin-logo.svg";
 import heroBg from "/assets/hero-bg.svg";
 import Image from "next/image";
@@ -19,8 +24,16 @@ type OptionType = {
   label: string;
 };
 
-export default function Header({ allRounds }: { allRounds: Round[] }) {
+export default function Header({
+  allRounds,
+  startPageTransition,
+}: {
+  allRounds: Round[];
+  startPageTransition: TransitionStartFunction;
+}) {
+  const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+
   const [filters, setFilters] = useState({
     chainId: pathname?.split("/")[1] as string,
     roundId: pathname?.split("/")[2] as string,
@@ -38,10 +51,10 @@ export default function Header({ allRounds }: { allRounds: Round[] }) {
     if (!newChainId) return;
     const init = async () => {
       if (!!allRounds?.length) return;
-      router.push(`${pathname}?search=${newChainId}`);
+      startTransition(() => {
+        router.push(`${pathname}?search=${newChainId}`);
+      });
     };
-
-    init();
 
     if (filters.roundId) return;
     setNewFilters({
@@ -53,6 +66,7 @@ export default function Header({ allRounds }: { allRounds: Round[] }) {
         chainId: newChainId,
         roundId: newRoundId,
       });
+    init();
   }, [pathname]);
 
   const router = useRouter();
@@ -82,13 +96,17 @@ export default function Header({ allRounds }: { allRounds: Round[] }) {
   const handleChainChange = async (option: SingleValue<OptionType>) => {
     setNewFilters({ ...newFilters, chainId: option?.value || "" });
     if (!option?.value) return;
-    router.push(`${pathname}?search=${option.value}`);
+    startTransition(() => {
+      router.push(`${pathname}?search=${option.value}`);
+    });
   };
 
   const handleRoundChange = (option: SingleValue<OptionType>) => {
-    router.push(`/${newFilters.chainId}/${option?.value}`);
-    setNewFilters({ ...newFilters, roundId: option?.value! });
-    setFilters({ ...newFilters, roundId: option?.value! });
+    startPageTransition(() => {
+      router.push(`/${newFilters.chainId}/${option?.value}`);
+      setNewFilters({ ...newFilters, roundId: option?.value! });
+      setFilters({ ...newFilters, roundId: option?.value! });
+    });
   };
 
   return (
@@ -103,13 +121,16 @@ export default function Header({ allRounds }: { allRounds: Round[] }) {
         />
 
         <Select
+          isDisabled={isPending}
           isSearchable
-          options={roundOptions || []}
+          options={isPending ? [] : roundOptions || []}
           onChange={(option) => handleRoundChange(option)}
-          value={roundOptions.find(
-            (round) => round.value == newFilters.roundId
-          )}
-          placeholder="Select a round"
+          value={
+            isPending
+              ? undefined
+              : roundOptions.find((round) => round.value == newFilters.roundId)
+          }
+          placeholder={isPending ? "Loading..." : "Select a round"}
           className="w-60 z-[99]"
         />
       </div>

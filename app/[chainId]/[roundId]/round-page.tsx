@@ -3,6 +3,7 @@ import { Address, useAccount, useSignMessage } from "wagmi";
 import { useEffect, useRef, useState } from "react";
 import TweetEmbed from "react-tweet-embed";
 import { fetchMatchingDistribution } from "../../../api/round";
+import { useTransition } from "react";
 import {
   MatchingStatsData,
   PayoutToken,
@@ -79,6 +80,7 @@ export default function RoundPage({
   payoutTxnHash?: string;
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const { isConnected, address } = useAccount();
   const [isRoundOperator, setIsRoundOperator] = useState(false);
   const {
@@ -305,14 +307,14 @@ export default function RoundPage({
   return (
     <>
       <div className="relative">
-        <Header allRounds={allRounds} />
+        <Header allRounds={allRounds} startPageTransition={startTransition} />
       </div>
       <div className="p-6">
         {!roundId || pageError.value || !roundData ? (
           <>
             <NotFound />
           </>
-        ) : isPageLoading ? (
+        ) : isPageLoading || isPending  ? (
           <Loading />
         ) : (
           <div
