@@ -37,7 +37,8 @@ async function getData(chainId: number, roundId: Address) {
     applications:
       | (ProjectApplication & { matchingData?: MatchingStatsData })[]
       | undefined = undefined,
-    allRoundsList: Round[] | undefined = undefined;
+    allRoundsList: Round[] | undefined = undefined,
+    payoutTxnHash: string | undefined = undefined;
 
   try {
     const { data, allRounds } = await getRoundById(chainId, roundId);
@@ -74,7 +75,8 @@ async function getData(chainId: number, roundId: Address) {
     const price = await fetchPayoutTokenPrice(
       roundId,
       signerOrProvider,
-      matchingFundPayoutToken
+      matchingFundPayoutToken,
+      data.updatedAtBlock
     );
     const isDirectGrant =
       !data.metadata?.quadraticFundingConfig?.matchingFundsAvailable;
@@ -84,9 +86,27 @@ async function getData(chainId: number, roundId: Address) {
 
     roundData = { ...data, matchingPoolUSD, rate, matchingFundPayoutToken };
 
+    // matching data
+    const matchingData = await fetchMatchingDistribution(
+      roundId,
+      signerOrProvider,
+      roundData.matchingFundPayoutToken,
+      roundData.matchingPoolUSD
+    );
+    payoutTxnHash = matchingData?.payoutTxnHash;
     // applications data
     applications = await getProjectsApplications(roundId, chainId);
     if (!applications) throw new Error("No applications");
+    applications = applications?.map((app) => {
+      const projectMatchingData = matchingData?.matchingDistribution?.find(
+        (data) => data.projectId == app.projectId
+      );
+      return {
+        ...app,
+        matchingData: projectMatchingData,
+      };
+    });
+    applications = sortByMatchAmount(applications || []);
 
     // ipfs round data
     const {
@@ -107,7 +127,13 @@ async function getData(chainId: number, roundId: Address) {
   } catch (err) {
     console.log(err);
   }
-  return { roundData, roundInfo, applications, allRounds: allRoundsList };
+  return {
+    roundData,
+    roundInfo,
+    applications,
+    allRounds: allRoundsList,
+    payoutTxnHash,
+  };
 }
 
 export async function generateMetadata(
@@ -150,10 +176,8 @@ export default async function Page({
   params: { chainId, roundId },
   searchParams: { search },
 }: GrantPageProps) {
-  const { roundData, roundInfo, applications, allRounds } = await getData(
-    Number(chainId),
-    roundId as Address
-  );
+  const { roundData, roundInfo, applications, allRounds, payoutTxnHash } =
+    await getData(Number(chainId), roundId as Address);
   const searchedRoundsListData = search
     ? await getRoundsByChainId(Number(search))
     : undefined;
@@ -166,12 +190,13 @@ export default async function Page({
   return (
     <RoundPage
       roundData={roundData!}
-      allApplications={applications!}
+      applications={applications!}
       roundInfo={roundInfo!}
       chainId={Number(chainId)}
       roundId={roundId}
       refetchRoundInfo={refetchRoundInfo}
       allRounds={searchedRoundsListData?.data || allRounds!}
+      payoutTxnHash={payoutTxnHash}
     />
   );
 }

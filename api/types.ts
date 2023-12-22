@@ -130,7 +130,7 @@ export interface Round {
     version: string;
   };
   createdAtBlock: number;
-
+  updatedAtBlock: number;
   // approvedProjects?: Project[];
   matchAmount: string;
   matchAmountUSD: number;

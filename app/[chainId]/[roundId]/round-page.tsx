@@ -62,23 +62,24 @@ const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
 export default function RoundPage({
   roundData,
   roundInfo,
-  allApplications,
+  applications,
   chainId,
   roundId,
   refetchRoundInfo,
   allRounds,
+  payoutTxnHash
 }: {
   roundData: Round;
   roundInfo: RoundInfo;
-  allApplications: ProjectApplication[];
+  applications: (ProjectApplication & { matchingData?: MatchingStatsData })[];
   roundId: string;
   chainId: number;
   refetchRoundInfo: () => Promise<void>;
   allRounds: Round[];
+  payoutTxnHash?: string;
 }) {
   const router = useRouter();
   const { isConnected, address } = useAccount();
-  const [payoutTxnHash, setPayoutTxnHash] = useState<string>();
   const [isRoundOperator, setIsRoundOperator] = useState(false);
   const {
     data: signData,
@@ -96,8 +97,6 @@ export default function RoundPage({
     }
   }, [signData, isRoundOperator, isSignLoading, isSignError, signMessage]);
 
-  const [applications, setApplications] =
-    useState<(ProjectApplication & { matchingData?: MatchingStatsData })[]>();
   const [isUploading, setUploading] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isTweetsEditorOpen, setIsTweetsEditorOpen] = useState(false);
@@ -105,64 +104,6 @@ export default function RoundPage({
   const reportTemplateRef = useRef(null);
 
   const [isPageLoading, setIsPageLoading] = useState(false);
-
-  useEffect(() => {
-    const get = async (roundId: Address) => {
-      try {
-        setIsPageLoading(true);
-
-        // matching data
-        const signerOrProvider =
-          chainId == ChainId.PGN
-            ? new ethers.providers.JsonRpcProvider(
-                "https://rpc.publicgoods.network",
-                chainId
-              )
-            : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
-            ? new ethers.providers.JsonRpcProvider(
-                "https://rpcapi.fantom.network/",
-                chainId
-              )
-            : new ethers.providers.InfuraProvider(
-                chainId,
-                process.env.NEXT_PUBLIC_INFURA_API_KEY
-              );
-
-        const matchingData = await fetchMatchingDistribution(
-          roundId,
-          signerOrProvider,
-          roundData.matchingFundPayoutToken,
-          roundData.matchingPoolUSD
-        );
-        setPayoutTxnHash(matchingData?.payoutTxnHash);
-
-        let applications: (ProjectApplication & {
-          matchingData?: MatchingStatsData;
-        })[] = allApplications?.map((app) => {
-          const projectMatchingData = matchingData?.matchingDistribution?.find(
-            (data) => data.projectId == app.projectId
-          );
-          return {
-            ...app,
-            matchingData: projectMatchingData,
-          };
-        });
-        const sorted = sortByMatchAmount(applications || []);
-        setApplications(sorted);
-      } catch (err) {
-        console.log(err);
-        setPageError({ value: true, message: err + "An error occured." });
-      } finally {
-        setIsPageLoading(false);
-      }
-    };
-    roundId
-      ? get(roundId as Address)
-      : () => {
-          setIsPageLoading(false);
-          setPageError({ value: true, message: "Grant not found" });
-        };
-  }, [roundId, chainId]);
 
   useEffect(() => {
     setIsRoundOperator(false);
@@ -500,7 +441,7 @@ export default function RoundPage({
                   ) || []
                 }
                 totalCrowdfunded={roundData.amountUSD}
-                totalProjects={allApplications?.length || 0}
+                totalProjects={applications?.length || 0}
               >
                 {!!applications?.length && (
                   <GrantPlot

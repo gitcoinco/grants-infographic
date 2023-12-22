@@ -369,7 +369,8 @@ export async function getProjectOwners(
 export async function fetchPayoutTokenPrice(
   roundId: string | undefined,
   signerOrProvider: any,
-  token: PayoutToken
+  token: PayoutToken,
+  roundedEndedBlockNumber: number
 ) {
   if (!roundId) {
     throw new Error("Round ID is required");
@@ -385,8 +386,11 @@ export async function fetchPayoutTokenPrice(
     merklePayoutStrategyImplementationAbi,
     signerOrProvider
   );
-
-  const fundsDistributed = await payoutStrategy.queryFilter("FundsDistributed");
+  const filter = payoutStrategy.filters.BatchPayoutSuccessful();
+  const fundsDistributed = await payoutStrategy.queryFilter(
+    filter,
+    roundedEndedBlockNumber
+  );
 
   if (fundsDistributed?.length) {
     const payoutTimestamp = (await fundsDistributed[0].getBlock()).timestamp;
@@ -430,7 +434,6 @@ export async function fetchMatchingDistribution(
     if (distributionMetaPtr !== "") {
       // fetch distribution from IPFS
       const matchingDistributionRes = await fetchFromIPFS(distributionMetaPtr);
-
       matchingDistribution = matchingDistributionRes.matchingDistribution;
       // parse matchAmountInToken to a valid BigNumber + add matchAmount
       matchingDistribution = matchingDistribution.map((distribution) => {
