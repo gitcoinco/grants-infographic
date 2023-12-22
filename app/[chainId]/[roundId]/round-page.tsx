@@ -306,7 +306,7 @@ export default function RoundPage({
   };
   return (
     <>
-      <div className="relative">
+      <div className="relative min-h-[5rem]">
         <Header allRounds={allRounds} startPageTransition={startTransition} />
       </div>
       <div className="p-6">
