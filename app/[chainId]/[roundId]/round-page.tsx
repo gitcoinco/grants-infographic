@@ -222,7 +222,7 @@ export default function RoundPage({
     setNewRoundInfo({
       preamble: roundInfo?.preamble || defaultText,
       closing: roundInfo?.closing || defaultText,
-      tweetURLs: roundInfo?.tweetURLs || defaultTweetURL,
+      tweetURLs: roundInfo?.tweetURLs ? roundInfo.tweetURLs : defaultTweetURL,
       projects: roundInfo?.projects?.length
         ? roundInfo.projects
         : defaultProjects,
@@ -245,7 +245,7 @@ export default function RoundPage({
     setNewRoundInfo({
       preamble: roundInfo?.preamble || defaultText,
       closing: roundInfo?.closing || defaultText,
-      tweetURLs: roundInfo?.tweetURLs || defaultTweetURL,
+      tweetURLs: roundInfo?.tweetURLs ? roundInfo.tweetURLs : defaultTweetURL,
       projects: roundInfo?.projects?.length
         ? roundInfo.projects
         : defaultProjects,
@@ -314,7 +314,7 @@ export default function RoundPage({
           <>
             <NotFound />
           </>
-        ) : isPageLoading || isPending  ? (
+        ) : isPageLoading || isPending ? (
           <Loading />
         ) : (
           <div
@@ -532,21 +532,21 @@ export default function RoundPage({
                   </div>
                 ) : (
                   <div className="md:w-[80vw] max-w-4xl m-auto">
-                    {!!newRoundInfo?.tweetURLs?.length && (
-                      <ResponsiveMasonry
-                        columnsCountBreakPoints={{
-                          350: 1,
-                          750: 2,
-                          1125:
-                            newRoundInfo.tweetURLs.split(",")?.length >= 3
-                              ? 3
-                              : newRoundInfo.tweetURLs.split(",")?.length >= 2
-                              ? 2
-                              : 1,
-                        }}
-                      >
-                        <Masonry gutter="0.5rem">
-                          {newRoundInfo.tweetURLs
+                    <ResponsiveMasonry
+                      columnsCountBreakPoints={{
+                        350: 1,
+                        750: roundInfo?.tweetURLs ? 2 : 1,
+                        1125:
+                          roundInfo?.tweetURLs?.split(",")?.length >= 3
+                            ? 3
+                            : roundInfo?.tweetURLs?.split(",")?.length >= 2
+                            ? 2
+                            : 1,
+                      }}
+                    >
+                      <Masonry gutter="0.5rem">
+                        {roundInfo?.tweetURLs ? (
+                          roundInfo.tweetURLs
                             .split(",")
                             .map((tweetUrl, index) => (
                               <div key={index}>
@@ -559,10 +559,21 @@ export default function RoundPage({
                                   }}
                                 />
                               </div>
-                            ))}
-                        </Masonry>
-                      </ResponsiveMasonry>
-                    )}
+                            ))
+                        ) : (
+                          <div>
+                            <TweetEmbed
+                              tweetId={getTweetId(defaultTweetURL)}
+                              options={{
+                                theme: "dark",
+                                align: "center",
+                                dnt: "true",
+                              }}
+                            />
+                          </div>
+                        )}
+                      </Masonry>
+                    </ResponsiveMasonry>
                   </div>
                 )}
               </div>
