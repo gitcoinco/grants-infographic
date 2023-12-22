@@ -3,6 +3,7 @@ import { Address, useAccount, useSignMessage } from "wagmi";
 import { useEffect, useRef, useState } from "react";
 import TweetEmbed from "react-tweet-embed";
 import { fetchMatchingDistribution } from "../../../api/round";
+import { useTransition } from "react";
 import {
   MatchingStatsData,
   PayoutToken,
@@ -62,23 +63,25 @@ const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
 export default function RoundPage({
   roundData,
   roundInfo,
-  allApplications,
+  applications,
   chainId,
   roundId,
   refetchRoundInfo,
   allRounds,
+  payoutTxnHash,
 }: {
   roundData: Round;
   roundInfo: RoundInfo;
-  allApplications: ProjectApplication[];
+  applications: (ProjectApplication & { matchingData?: MatchingStatsData })[];
   roundId: string;
   chainId: number;
   refetchRoundInfo: () => Promise<void>;
   allRounds: Round[];
+  payoutTxnHash?: string;
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const { isConnected, address } = useAccount();
-  const [payoutTxnHash, setPayoutTxnHash] = useState<string>();
   const [isRoundOperator, setIsRoundOperator] = useState(false);
   const {
     data: signData,
@@ -96,8 +99,6 @@ export default function RoundPage({
     }
   }, [signData, isRoundOperator, isSignLoading, isSignError, signMessage]);
 
-  const [applications, setApplications] =
-    useState<(ProjectApplication & { matchingData?: MatchingStatsData })[]>();
   const [isUploading, setUploading] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isTweetsEditorOpen, setIsTweetsEditorOpen] = useState(false);
@@ -105,64 +106,6 @@ export default function RoundPage({
   const reportTemplateRef = useRef(null);
 
   const [isPageLoading, setIsPageLoading] = useState(false);
-
-  useEffect(() => {
-    const get = async (roundId: Address) => {
-      try {
-        setIsPageLoading(true);
-
-        // matching data
-        const signerOrProvider =
-          chainId == ChainId.PGN
-            ? new ethers.providers.JsonRpcProvider(
-                "https://rpc.publicgoods.network",
-                chainId
-              )
-            : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
-            ? new ethers.providers.JsonRpcProvider(
-                "https://rpcapi.fantom.network/",
-                chainId
-              )
-            : new ethers.providers.InfuraProvider(
-                chainId,
-                process.env.NEXT_PUBLIC_INFURA_API_KEY
-              );
-
-        const matchingData = await fetchMatchingDistribution(
-          roundId,
-          signerOrProvider,
-          roundData.matchingFundPayoutToken,
-          roundData.matchingPoolUSD
-        );
-        setPayoutTxnHash(matchingData?.payoutTxnHash);
-
-        let applications: (ProjectApplication & {
-          matchingData?: MatchingStatsData;
-        })[] = allApplications?.map((app) => {
-          const projectMatchingData = matchingData?.matchingDistribution?.find(
-            (data) => data.projectId == app.projectId
-          );
-          return {
-            ...app,
-            matchingData: projectMatchingData,
-          };
-        });
-        const sorted = sortByMatchAmount(applications || []);
-        setApplications(sorted);
-      } catch (err) {
-        console.log(err);
-        setPageError({ value: true, message: err + "An error occured." });
-      } finally {
-        setIsPageLoading(false);
-      }
-    };
-    roundId
-      ? get(roundId as Address)
-      : () => {
-          setIsPageLoading(false);
-          setPageError({ value: true, message: "Grant not found" });
-        };
-  }, [roundId, chainId]);
 
   useEffect(() => {
     setIsRoundOperator(false);
@@ -364,14 +307,14 @@ export default function RoundPage({
   return (
     <>
       <div className="relative">
-        <Header allRounds={allRounds} />
+        <Header allRounds={allRounds} startPageTransition={startTransition} />
       </div>
       <div className="p-6">
         {!roundId || pageError.value || !roundData ? (
           <>
             <NotFound />
           </>
-        ) : isPageLoading ? (
+        ) : isPageLoading || isPending  ? (
           <Loading />
         ) : (
           <div
@@ -459,25 +402,13 @@ export default function RoundPage({
                         {roundData.metadata?.name}
                       </h1>
                     </div>
-                    <div className="z-50 group">
-                      <Button type="primary" onClick={createPDF}>
-                        <Image
-                          src={downloadIcon}
-                          width="12"
-                          height="12"
-                          alt="download icon"
-                          className="transition-all group-hover:translate-y-0.5"
-                        />
-                        <span>PDF</span>
-                      </Button>
-                    </div>
                   </div>
                   {!!applications?.length &&
                     !applications[0].matchingData?.matchAmountUSD && (
                       <h5 className="text-lg text-blue">
-                        Note that this round&apos;s matching data is not
-                        finalized yet and the graph is displaying only
-                        crowdfunded amount
+                        The matching pool has not yet been distributed. After
+                        the funds are paid out, the funded projects and amounts
+                        will be displayed below and in the graph.
                       </h5>
                     )}
                   {/* <h2 className="text-blue mb-4 text-3xl font-grad">
@@ -500,7 +431,7 @@ export default function RoundPage({
                   ) || []
                 }
                 totalCrowdfunded={roundData.amountUSD}
-                totalProjects={allApplications?.length || 0}
+                totalProjects={applications?.length || 0}
               >
                 {!!applications?.length && (
                   <GrantPlot

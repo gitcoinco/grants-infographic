@@ -63,7 +63,8 @@ async function getData(chainId: number, roundId: Address) {
     const price = await fetchPayoutTokenPrice(
       roundId,
       signerOrProvider,
-      matchingFundPayoutToken
+      matchingFundPayoutToken,
+      data.updatedAtBlock
     );
     const rate = price ? price : data.matchAmountUSD / tokenAmount;
     const matchingPoolUSD =

@@ -59,7 +59,7 @@ export default function RootLayout({
       <body>
         <AppProviders>
           <GlobalLayout>
-            <Suspense fallback={<Loading />}>{children}</Suspense>
+            <Suspense fallback={<div className="pt-28"><Loading /></div>}>{children}</Suspense>
           </GlobalLayout>
         </AppProviders>
       </body>
