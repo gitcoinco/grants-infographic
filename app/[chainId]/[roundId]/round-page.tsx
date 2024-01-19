@@ -281,7 +281,9 @@ export default function RoundPage({
     applications: (ProjectApplication & { matchingData?: MatchingStatsData })[]
   ) => {
     const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
-      (t) => t.address.toLowerCase() == roundData.token.toLowerCase()
+      (t) =>
+        t.address.toLowerCase() == roundData.token.toLowerCase() &&
+        t.chainId == chainId
     )[0];
 
     const tokenFieldName = `MATCHED ${matchingFundPayoutToken.name}`;
