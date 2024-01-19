@@ -34,7 +34,9 @@ async function getData(chainId: number, roundId: Address) {
     if (!data?.metadata?.quadraticFundingConfig?.matchingFundsAvailable)
       throw new Error("No round metadata");
     const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
-      (t) => t.address.toLowerCase() == data?.token.toLowerCase()
+      (t) =>
+        t.address.toLowerCase() == data?.token.toLowerCase() &&
+        t.chainId == chainId
     )[0];
     tokenAmount = parseFloat(
       ethers.utils.formatUnits(
@@ -42,7 +44,7 @@ async function getData(chainId: number, roundId: Address) {
         matchingFundPayoutToken.decimal
       )
     );
-
+  
     // get payout token price
     const signerOrProvider =
       chainId == ChainId.PGN

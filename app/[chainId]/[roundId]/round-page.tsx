@@ -432,6 +432,7 @@ export default function RoundPage({
                 }
                 totalCrowdfunded={roundData.amountUSD}
                 totalProjects={applications?.length || 0}
+                chainId={chainId}
               >
                 {!!applications?.length && (
                   <GrantPlot
