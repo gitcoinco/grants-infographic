@@ -14,32 +14,33 @@ export default function Stats({
   // matching value by projects
   projectsTokenAmount,
   children,
+  chainId
 }: {
   round: Round;
   totalCrowdfunded: number;
   totalProjects: number;
   projectsTokenAmount: number[];
   children: ReactNode;
+  chainId: number
 }) {
-   const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
-     (t) => t.address.toLowerCase() == round.token.toLowerCase()
-   )[0];
-   const tokenAmount = parseFloat(
-     ethers.utils.formatUnits(
-       round.matchAmount,
-       matchingFundPayoutToken.decimal
-     )
-   );
+  const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
+    (t) =>
+      t.address.toLowerCase() == round.token.toLowerCase() &&
+      t.chainId == chainId
+  )[0];
+ 
+  const tokenAmount = parseFloat(
+    ethers.utils.formatUnits(round.matchAmount, matchingFundPayoutToken.decimal)
+  );
 
   const matchingCapPercent =
     round.metadata?.quadraticFundingConfig?.matchingCapAmount || 0;
   const matchingCapTokenValue =
-    ((tokenAmount || 0) *
-      (matchingCapPercent || 0)) /
-    100;
+    ((tokenAmount || 0) * (matchingCapPercent || 0)) / 100;
   const projectsReachedMachingCap: number =
-    projectsTokenAmount?.filter((amount) => amount >= matchingCapTokenValue)?.length || 0;
- 
+    projectsTokenAmount?.filter((amount) => amount >= matchingCapTokenValue)
+      ?.length || 0;
+
   return (
     <Card>
       <div className="flex flex-col gap-4">
