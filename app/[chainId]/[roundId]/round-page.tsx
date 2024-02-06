@@ -338,7 +338,7 @@ export default function RoundPage({
                   />
                   <div className="flex justify-between sm:gap-8 gap-4 sm:items-center mb-12 sm:flex-row flex-col">
                     <div className="flex items-center gap-4 pl-10">
-                      <div className="relative -mt-14 z-[30]">
+                      <div className="flex-shrink-0 relative -mt-14 z-[30]">
                         <input
                           accept="image/*"
                           type="file"
@@ -353,7 +353,7 @@ export default function RoundPage({
                               src={URL.createObjectURL(logo)}
                               width="120"
                               height="120"
-                              className="aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
+                              className="flex-shrink-0 aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
                               alt="logo"
                             />
                             <div className="absolute -bottom-10 ">
@@ -374,7 +374,7 @@ export default function RoundPage({
                             height={120}
                             cid={roundInfo.logo}
                             alt={`${roundData.metadata?.name} logo`}
-                            className="aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
+                            className="flex-shrink-0 aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
                           />
                         ) : (
                           <Image
@@ -382,7 +382,7 @@ export default function RoundPage({
                             height="120"
                             src={defaultLogo}
                             alt=""
-                            className="aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
+                            className="flex-shrink-0 aspect-square object-cover w-28 h-28 rounded-full border border-dark bg-sand"
                           />
                         )}
                         {isRoundOperator && isSignSuccess && (

@@ -69,6 +69,13 @@ async function getData(chainId: number, roundId: Address) {
             "https://rpcapi.fantom.network/",
             chainId
           )
+        : chainId == ChainId.BASE
+        ? new ethers.providers.JsonRpcProvider("https://1rpc.io/base", chainId)
+        : chainId == ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID
+        ? new ethers.providers.JsonRpcProvider(
+            "https://mainnet.era.zksync.io",
+            chainId
+          )
         : new ethers.providers.InfuraProvider(
             chainId,
             process.env.NEXT_PUBLIC_INFURA_API_KEY
