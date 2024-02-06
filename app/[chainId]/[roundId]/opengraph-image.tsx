@@ -44,7 +44,7 @@ async function getData(chainId: number, roundId: Address) {
         matchingFundPayoutToken.decimal
       )
     );
-  
+
     // get payout token price
     const signerOrProvider =
       chainId == ChainId.PGN
@@ -55,6 +55,13 @@ async function getData(chainId: number, roundId: Address) {
         : chainId == ChainId.FANTOM_MAINNET_CHAIN_ID
         ? new ethers.providers.JsonRpcProvider(
             "https://rpcapi.fantom.network/",
+            chainId
+          )
+        : chainId == ChainId.BASE
+        ? new ethers.providers.JsonRpcProvider("https://1rpc.io/base", chainId)
+        : chainId == ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID
+        ? new ethers.providers.JsonRpcProvider(
+            "https://mainnet.era.zksync.io",
             chainId
           )
         : new ethers.providers.InfuraProvider(
