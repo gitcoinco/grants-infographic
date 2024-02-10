@@ -57,3 +57,13 @@ button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+/* farcaster & twitter embed */
+.farcaster-embed-container {
+  color: #f7f9f9;
+  background-color: #15202b;
+  border-radius: 12px;
+}
+.twitter-tweet {
+  margin: 0 auto !important;
+}

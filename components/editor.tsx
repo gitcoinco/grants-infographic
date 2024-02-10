@@ -1,5 +1,5 @@
 import { Formik, Field, Form, FieldArray, getIn } from "formik";
-import { twitterRegex } from "../api/utils";
+import { warpcastRegex, twitterRegex } from "../api/utils";
 import { useState } from "react";
 import Button from "./button";
 
@@ -26,12 +26,12 @@ export default function Editor({
     [name]: value,
   });
 
-  function validateTweet(value: string) {
+  function validateSocialPostUrl(value: string) {
     let error;
     if (!value) {
       error = "Required";
-    } else if (!twitterRegex.test(value)) {
-      error = "Invalid tweet URL";
+    } else if (!twitterRegex.test(value) && !warpcastRegex.test(value)) {
+      error = "Invalid Twitter / Farcaster URL";
     }
     return error;
   }
@@ -77,7 +77,7 @@ export default function Editor({
                             <div key={index}>
                               <div className="flex flex-col gap-2">
                                 <label htmlFor={`tweets.${index}`}>
-                                  Tweet URL
+                                  Twitter / Farcaster post URL
                                 </label>
                                 <div className="flex flex-col gap-0.5">
                                   <div className="flex gap-4 items-center justify-between">
@@ -86,7 +86,7 @@ export default function Editor({
                                       name={`tweets.${index}`}
                                       placeholder="https://twitter.com/umarkhaneth/status/1718319104178753678"
                                       type="url"
-                                      validate={validateTweet}
+                                      validate={validateSocialPostUrl}
                                     />
                                     <div>
                                       <button
