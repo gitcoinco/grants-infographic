@@ -39,6 +39,9 @@ export const defaultTweetURL =
 export const twitterRegex: RegExp =
   /^https?:\/\/(www.|m.|mobile.)?twitter|x\.com\/(?:#!\/)?\w+\/status?\/\d+/;
 
+  export const warpcastRegex: RegExp =
+    /^https?:\/\/(www.)?warpcast\.com\/(?:#!\/)?\w+\/(?:#!\/)?\w+/;
+
 export const sortByMatchAmount = (
   arr: (ProjectApplication & { matchingData?: MatchingStatsData })[] | undefined
 ) => {

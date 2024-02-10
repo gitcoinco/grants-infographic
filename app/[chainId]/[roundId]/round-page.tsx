@@ -49,6 +49,8 @@ import { markdownImgRegex } from "../../../constants";
 import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
+import { FarcasterEmbed } from "react-farcaster-embed";
+import "react-farcaster-embed/dist/styles.css";
 import * as Papa from "papaparse";
 import heroBg from "/assets/hero-bg.svg";
 import Header from "../../../components/header";
@@ -266,6 +268,11 @@ export default function RoundPage({
     if (!tweetUrl?.length) return "";
     const tweetId = tweetUrl.split("/").pop()?.split("?")[0];
     return tweetId || "";
+  };
+
+  const getSocialPostPlatform = (url: string) => {
+    if (url.includes("warpcast.com")) return "FARCASTER";
+    else return "TWITTER";
   };
 
   function downloadCSV() {
@@ -525,7 +532,9 @@ export default function RoundPage({
                 </h2>
                 {isTweetsEditorOpen && isRoundOperator && isSignSuccess ? (
                   <div className="w-full sm:min-w-[50rem]">
-                    <p className="mb-4">You can add max 6 tweet links here:</p>
+                    <p className="mb-4">
+                      Add up to a maximum of 6 Twitter/Farcaster links below:
+                    </p>
 
                     <Editor
                       name="tweetURLs"
@@ -557,20 +566,22 @@ export default function RoundPage({
                     >
                       <Masonry gutter="0.5rem">
                         {roundInfo?.tweetURLs ? (
-                          roundInfo.tweetURLs
-                            .split(",")
-                            .map((tweetUrl, index) => (
-                              <div key={index}>
+                          roundInfo.tweetURLs.split(",").map((url, index) => (
+                            <div key={index}>
+                              {getSocialPostPlatform(url) == "TWITTER" ? (
                                 <TweetEmbed
-                                  tweetId={getTweetId(tweetUrl)}
+                                  tweetId={getTweetId(url)}
                                   options={{
                                     theme: "dark",
                                     align: "center",
                                     dnt: "true",
                                   }}
                                 />
-                              </div>
-                            ))
+                              ) : (
+                                <FarcasterEmbed url={url} />
+                              )}
+                            </div>
+                          ))
                         ) : (
                           <div>
                             <TweetEmbed
