@@ -23,13 +23,16 @@ import {
 import { BigNumber, ethers } from "ethers";
 import roundImplementationAbi from "./abi/roundImplementation";
 import merklePayoutStrategyImplementationAbi from "./abi/merklePayoutStrategyImplementation";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
+dayjs.extend(LocalizedFormat);
 
 const pinataSDK = require("@pinata/sdk");
 const pinata = new pinataSDK({
   pinataJWTKey: process.env.NEXT_PUBLIC_PINATA_JWT,
 });
 
-dayjs.extend(LocalizedFormat);
+const indexerUrl = "https://grants-stack-indexer-v2.gitcoin.co";
 
 /**
  * Shape of subgraph response
@@ -107,6 +110,7 @@ export const getRoundById = async (
       allRounds: undefined,
     };
   const round = findRoundById(allRounds.data || [], roundId);
+
   return {
     success: true,
     error: "",
@@ -134,7 +138,7 @@ export const getRoundsByChainId = async (
 ): Promise<{ data: Round[] | undefined; success: boolean; error: string }> => {
   try {
     const resp = await fetchWithTimeout(
-      `https://indexer-production.fly.dev/data/${chainId}/rounds.json`,
+      `${indexerUrl}/data/${chainId}/rounds.json`,
       { next: { revalidate: 3600 } }
     );
     const data = (await resp.json()) as Round[];
@@ -218,7 +222,7 @@ export const getProjectsApplications = async (
 ) => {
   try {
     const resp = await fetchWithTimeout(
-      `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
+      `${indexerUrl}/data/${chainId}/rounds/${getAddress(
         roundId
       )}/applications.json`,
       { next: { revalidate: 3600 } }
@@ -268,9 +272,7 @@ export const getProjectsApplications = async (
 export const getRoundVotes = async (roundId: Address) => {
   try {
     const resp = await fetch(
-      `https://indexer-production.fly.dev/data/1/rounds/${getAddress(
-        roundId
-      )}/votes.json`,
+      `${indexerUrl}/data/1/rounds/${getAddress(roundId)}/votes.json`,
       {
         method: "GET",
       }
@@ -285,9 +287,7 @@ export const getRoundVotes = async (roundId: Address) => {
 export const getRoundContributors = async (roundId: Address) => {
   try {
     const resp = await fetch(
-      `https://indexer-production.fly.dev/data/1/rounds/${getAddress(
-        roundId
-      )}/contributors.json`,
+      `${indexerUrl}/data/1/rounds/${getAddress(roundId)}/contributors.json`,
       {
         method: "GET",
         // headers: {
@@ -310,7 +310,7 @@ export const getProjectContributors = async (
 ) => {
   try {
     const resp = await fetch(
-      `https://indexer-production.fly.dev/data/${chainId}/rounds/${getAddress(
+      `${indexerUrl}/data/${chainId}/rounds/${getAddress(
         roundId
       )}/projects/${getAddress(projectId)}/contributors.json`,
       {

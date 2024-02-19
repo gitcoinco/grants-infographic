@@ -17,6 +17,8 @@ import {
   getProjectsApplications,
   getRoundById,
 } from "../../../api/round";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
 dayjs.extend(LocalizedFormat);
 
 export const runtime = "nodejs";
@@ -241,7 +243,7 @@ export default async function GET(params: GrantPageProps) {
                 }}
               >
                 <p style={{ color: "#F17A4C", fontSize: 24 }}>
-                  {dayjs.unix(Number(roundData?.roundEndTime)).format("lll")}
+                  {dayjs.utc(dayjs.unix(Number(roundData?.roundEndTime))).format("YYYY/MM/DD HH:mm")} (UTC)
                 </p>
                 <span style={{ fontSize: 18 }}>Round ended on</span>
               </div>

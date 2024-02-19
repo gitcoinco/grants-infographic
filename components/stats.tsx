@@ -5,6 +5,8 @@ import Card from "./card";
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import { ethers } from "ethers";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
 dayjs.extend(LocalizedFormat);
 
 export default function Stats({
@@ -77,7 +79,7 @@ export default function Stats({
           {!!round.roundEndTime && (
             <div className="flex flex-col justify-between">
               <p className="text-orange text-xl pb-2 font-grad">
-                {dayjs.unix(Number(round.roundEndTime)).format("lll")}
+                {dayjs.utc(dayjs.unix(Number(round.roundEndTime))).format("YYYY/MM/DD HH:mm")} (UTC)
               </p>
               <p className="sm:text-base text-sm">Round ended on</p>
             </div>
