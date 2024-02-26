@@ -291,6 +291,7 @@ export interface Program {
   };
 }
 
+
 export const RedstoneTokenIds = {
   FTM: "FTM",
   USDC: "USDC",
@@ -307,4 +308,5 @@ export const RedstoneTokenIds = {
   MUTE: "MUTE",
   mkUSD: "mkUSD",
   DATA: "DATA",
+  USDGLO: "USDGLO",
 } as const;
