@@ -50,8 +50,8 @@ import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 // @ts-ignore
-import { FarcasterEmbed } from "react-farcaster-embed/dist/client";
-// import { FarcasterEmbed } from "react-farcaster-embed";
+// import { FarcasterEmbed } from "react-farcaster-embed/dist/client";
+import { FarcasterEmbed } from "react-farcaster-embed";
 import "react-farcaster-embed/dist/styles.css";
 import * as Papa from "papaparse";
 import heroBg from "/assets/hero-bg.svg";
@@ -580,7 +580,8 @@ export default function RoundPage({
                                   }}
                                 />
                               ) : (
-                                <FarcasterEmbed url={url} />
+                                <div/>
+                                // <FarcasterEmbed url={url} />
                               )}
                             </div>
                           ))
