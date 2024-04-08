@@ -49,7 +49,9 @@ import { markdownImgRegex } from "../../../constants";
 import EditIcon from "../../../components/edit-icon";
 import Loading from "../../loading";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
-import { FarcasterEmbed } from "react-farcaster-embed";
+// @ts-ignore
+import { FarcasterEmbed } from "react-farcaster-embed/dist/client";
+// import { FarcasterEmbed } from "react-farcaster-embed";
 import "react-farcaster-embed/dist/styles.css";
 import * as Papa from "papaparse";
 import heroBg from "/assets/hero-bg.svg";
