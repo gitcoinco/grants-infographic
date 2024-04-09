@@ -9,9 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@nivo/bar": "^0.85.1",
-    "@nivo/core": "^0.85.1",
-    "@nivo/treemap": "^0.75.0",
     "@pinata/sdk": "^2.1.0",
     "@rainbow-me/rainbowkit": "^1.0.5",
     "@rainbow-me/rainbowkit-siwe-next-auth": "^0.3.1",
