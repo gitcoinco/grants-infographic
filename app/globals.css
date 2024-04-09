@@ -59,10 +59,21 @@ button:disabled {
 }
 
 /* farcaster & twitter embed */
-.farcaster-embed-container {
+div.farcaster-embed-container {
   color: #f7f9f9;
   background-color: #15202b;
   border-radius: 12px;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+.farcaster-embed-body p {
+  font-size: 14px !important;
+  line-height: 19px !important;
+}
+@media (min-width: 400px) {
+  .farcaster-embed-stats ul {
+    gap: 0.5rem 1.5rem !important;
+  }
 }
 .twitter-tweet {
   margin: 0 auto !important;
