@@ -1,7 +1,12 @@
 "use client";
 
 import React, { createContext, useState } from "react";
-import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import {
+  getDefaultWallets,
+  RainbowKitProvider,
+  Theme,
+  lightTheme,
+} from "@rainbow-me/rainbowkit";
 import { configureChains, createConfig, WagmiConfig } from "wagmi";
 import "react-quill/dist/quill.snow.css";
 import {
@@ -12,7 +17,7 @@ import {
   polygon,
   zora,
 } from "wagmi/chains";
-
+import { merge } from "lodash";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 
@@ -49,7 +54,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 
 const { connectors } = getDefaultWallets({
   appName: "RainbowKit App",
-  projectId: process.env.NEXT_PUBLIC_PROJECT_ID || '',
+  projectId: process.env.NEXT_PUBLIC_PROJECT_ID || "",
   chains,
 });
 
@@ -65,15 +70,25 @@ export default function AppProviders({
 }: {
   children: React.ReactNode;
 }) {
-
   const [filters, setFilters] = useState<Filters>({
     chainId: undefined,
     roundId: undefined,
   });
 
+  const customRainbowKitTheme = merge(lightTheme(), {
+    colors: {
+      accentColor: "#FFD9CD",
+      accentColorForeground: "#000000",
+    },
+  }) as Theme;
+
   return (
     <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider chains={chains}>
+      <RainbowKitProvider
+        theme={customRainbowKitTheme}
+        coolMode
+        chains={chains}
+      >
         {/* <roundsContext.Provider
         value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}
       > */}
@@ -85,4 +100,3 @@ export default function AppProviders({
     </WagmiConfig>
   );
 }
-

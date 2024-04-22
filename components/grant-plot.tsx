@@ -125,39 +125,41 @@ export default function GrantPlot({
     },
   });
 
-  var parents = Array(values.length).fill("");
+  var parents = Array(values?.length).fill("");
 
   return (
     <div className="bg-sand w-full">
-      <Plot
-        className={`!bg-sand w-full child:w-full color-sand !child:bg-sand child:max-w-[${
-          width - 100
-        }px] max-w-[${width - 100}px]`}
-        data={[
-          {
-            type: "treemap",
-            labels: labels,
-            parents: parents,
-            values: values,
-            text: values.map(
-              (value, i) => `$${formatAmount(value.toFixed(2))}`
-            ),
-            textinfo: "label+text",
-            //@ts-ignore
-            hoverinfo: "label+text",
-            // hoverlabel: {namelength: -1},
-            title: { text: "label" },
-            mode: "markers",
-            textfont: { size: 18 },
-            marker: {
-              line: { width: 2 },
+      {values?.length && labels?.length && (
+        <Plot
+          className={`!bg-sand w-full child:w-full color-sand !child:bg-sand child:max-w-[${
+            width - 100
+          }px] max-w-[${width - 100}px]`}
+          data={[
+            {
+              type: "treemap",
+              labels: labels,
+              parents: parents,
+              values: values,
+              text: values.map(
+                (value, i) => `$${formatAmount(value.toFixed(2))}`
+              ),
+              textinfo: "label+text",
+              //@ts-ignore
+              hoverinfo: "label+text",
+              // hoverlabel: {namelength: -1},
+              title: { text: "label" },
+              mode: "markers",
+              textfont: { size: 18 },
+              marker: {
+                line: { width: 2 },
 
-              colors,
+                colors,
+              },
             },
-          },
-        ]}
-        layout={layout}
-      />
+          ]}
+          layout={layout}
+        />
+      )}
     </div>
   );
 }

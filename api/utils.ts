@@ -25,6 +25,26 @@ export const getBlockExplorerTxLink = (chainId: ChainId, hash: string) => {
     return `https://explorer.zksync.io/tx/${hash}`;
   if (chainId == ChainId.BASE) return `https://basescan.org/tx/${hash}`;
 };
+
+export const getDaysLeft = (fromNowToTimestampStr: string) => {
+  const targetTimestamp = Number(fromNowToTimestampStr);
+
+  // Some timestamps are returned as overflowed (1.15e+77)
+  // We parse these into undefined to show as "No end date" rather than make the date diff calculation
+  if (targetTimestamp > Number.MAX_SAFE_INTEGER) {
+    return undefined;
+  }
+
+  // TODO replace with differenceInCalendarDays from 'date-fns'
+  const currentTimestampInSeconds = Math.floor(Date.now() / 1000); // current timestamp in seconds
+  const secondsPerDay = 60 * 60 * 24; // number of seconds per day
+
+  const differenceInSeconds = targetTimestamp - currentTimestampInSeconds;
+  const differenceInDays = Math.floor(differenceInSeconds / secondsPerDay);
+
+  return differenceInDays;
+};
+
 export const getGranteeLink = (
   chainId: number,
   roundId: string,
@@ -39,8 +59,8 @@ export const defaultTweetURL =
 export const twitterRegex: RegExp =
   /^https?:\/\/(www.|m.|mobile.)?twitter|x\.com\/(?:#!\/)?\w+\/status?\/\d+/;
 
-  export const warpcastRegex: RegExp =
-    /^https?:\/\/(www.)?warpcast\.com\/(?:#!\/)?\w+\/(?:#!\/)?\w+/;
+export const warpcastRegex: RegExp =
+  /^https?:\/\/(www.)?warpcast\.com\/(?:#!\/)?\w+\/(?:#!\/)?\w+/;
 
 export const sortByMatchAmount = (
   arr: (ProjectApplication & { matchingData?: MatchingStatsData })[] | undefined
@@ -108,7 +128,7 @@ export const isTestnet = (chainId: number) => {
     ChainId.FANTOM_TESTNET_CHAIN_ID,
     ChainId.PGN_TESTNET,
     ChainId.ARBITRUM_GOERLI,
-    ChainId.GOERLI_CHAIN_ID,
+    // ChainId.GOERLI_CHAIN_ID,
     ChainId.FUJI,
     ChainId.POLYGON_MUMBAI,
     ChainId.ZKSYNC_ERA_TESTNET_CHAIN_ID,
@@ -121,7 +141,7 @@ export enum ChainId {
   //
   MAINNET = 1,
   //
-  GOERLI_CHAIN_ID = 5,
+  // GOERLI_CHAIN_ID = 5,
   //
   OPTIMISM_MAINNET_CHAIN_ID = 10,
   //
@@ -146,17 +166,24 @@ export enum ChainId {
   ZKSYNC_ERA_MAINNET_CHAIN_ID = 324,
 }
 
-export const CHAINS: Record<ChainId, Program["chain"]> = {
+export const CHAINS: Record<
+  ChainId,
+  {
+    id: ChainId;
+    name: string;
+    logo: string;
+  }
+> = {
   [ChainId.MAINNET]: {
     id: ChainId.MAINNET,
     name: "Mainnet", // TODO get canonical network names
     logo: "/logos/ethereum-eth-logo.svg",
   },
-  [ChainId.GOERLI_CHAIN_ID]: {
-    id: ChainId.GOERLI_CHAIN_ID,
-    name: "Goerli", // TODO get canonical network names
-    logo: "/logos/ethereum-eth-logo.svg",
-  },
+  // [ChainId.GOERLI_CHAIN_ID]: {
+  //   id: ChainId.GOERLI_CHAIN_ID,
+  //   name: "Goerli", // TODO get canonical network names
+  //   logo: "/logos/ethereum-eth-logo.svg",
+  // },
   [ChainId.OPTIMISM_MAINNET_CHAIN_ID]: {
     id: ChainId.OPTIMISM_MAINNET_CHAIN_ID,
     name: "Optimism",
@@ -205,12 +232,12 @@ export const CHAINS: Record<ChainId, Program["chain"]> = {
   [ChainId.POLYGON]: {
     id: ChainId.POLYGON,
     name: "Polygon PoS",
-    logo: "./logos/pol-logo.svg",
+    logo: "/logos/pol-logo.svg",
   },
   [ChainId.POLYGON_MUMBAI]: {
     id: ChainId.POLYGON_MUMBAI,
     name: "Polygon Mumbai",
-    logo: "./logos/pol-logo.svg",
+    logo: "/logos/pol-logo.svg",
   },
   [ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID]: {
     id: ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID,
@@ -233,7 +260,7 @@ export const TokenNamesAndLogos = {
   FTM: "/logos/fantom-logo.svg",
   BUSD: "/logos/busd-logo.svg",
   DAI: "/logos/dai-logo.svg",
-  USDC: "./logos/usdc-logo.svg",
+  USDC: "/logos/usdc-logo.svg",
   ETH: "/logos/ethereum-eth-logo.svg",
   OP: "/logos/optimism-logo.svg",
   ARB: "/logos/arb-logo.svg",
@@ -348,32 +375,32 @@ const FANTOM_MAINNET_TOKENS: PayoutToken[] = [
   },
 ];
 
-const GOERLI_TESTNET_TOKENS: PayoutToken[] = [
-  {
-    name: "BUSD",
-    chainId: ChainId.GOERLI_CHAIN_ID,
-    address: "0xa7c3bf25ffea8605b516cf878b7435fe1768c89b",
-    decimal: 18,
-    logo: TokenNamesAndLogos["BUSD"],
-    redstoneTokenId: RedstoneTokenIds["BUSD"],
-  },
-  {
-    name: "DAI",
-    chainId: ChainId.GOERLI_CHAIN_ID,
-    address: "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
-    decimal: 18,
-    logo: TokenNamesAndLogos["DAI"],
-    redstoneTokenId: RedstoneTokenIds["DAI"],
-  },
-  {
-    name: "ETH",
-    chainId: ChainId.GOERLI_CHAIN_ID,
-    address: ethers.constants.AddressZero,
-    decimal: 18,
-    logo: TokenNamesAndLogos["ETH"],
-    redstoneTokenId: RedstoneTokenIds["ETH"],
-  },
-];
+// const GOERLI_TESTNET_TOKENS: PayoutToken[] = [
+//   {
+//     name: "BUSD",
+//     chainId: ChainId.GOERLI_CHAIN_ID,
+//     address: "0xa7c3bf25ffea8605b516cf878b7435fe1768c89b",
+//     decimal: 18,
+//     logo: TokenNamesAndLogos["BUSD"],
+//     redstoneTokenId: RedstoneTokenIds["BUSD"],
+//   },
+//   {
+//     name: "DAI",
+//     chainId: ChainId.GOERLI_CHAIN_ID,
+//     address: "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
+//     decimal: 18,
+//     logo: TokenNamesAndLogos["DAI"],
+//     redstoneTokenId: RedstoneTokenIds["DAI"],
+//   },
+//   {
+//     name: "ETH",
+//     chainId: ChainId.GOERLI_CHAIN_ID,
+//     address: ethers.constants.AddressZero,
+//     decimal: 18,
+//     logo: TokenNamesAndLogos["ETH"],
+//     redstoneTokenId: RedstoneTokenIds["ETH"],
+//   },
+// ];
 
 const FANTOM_TESTNET_TOKENS: PayoutToken[] = [
   {
@@ -700,13 +727,12 @@ export const graphql_fetch = async (
  * @param cid - the unique content identifier that points to the data
  */
 
-const URL = "d16c97c2np8a2o.cloudfront.net";
 const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL
   ? process.env.NEXT_PUBLIC_GATEWAY_URL
   : "https://gateway.pinata.cloud";
 
 export const fetchFromIPFS = (cid: string, roundInfo?: boolean) => {
-  const IFPSUrl = roundInfo ? GATEWAY_URL : URL;
+  const IFPSUrl = roundInfo ? GATEWAY_URL : "ipfs.io";
   return fetch(`https://${IFPSUrl}/ipfs/${cid}`, {
     next: { tags: [roundInfo ? "roundInfo" : ""] },
   }).then((resp) => {
@@ -717,6 +743,28 @@ export const fetchFromIPFS = (cid: string, roundInfo?: boolean) => {
     return Promise.reject(resp);
   });
 };
+
+
+export function parseChainId(input: string | number): ChainId {
+  if (typeof input === "string") {
+    // If the input is a string, try to parse it as a number
+    const parsedInput = parseInt(input, 10);
+    if (!isNaN(parsedInput)) {
+      // If parsing is successful, check if it's a valid enum value
+      if (Object.values(ChainId).includes(parsedInput)) {
+        return parsedInput as ChainId;
+      }
+    }
+  } else if (typeof input === "number") {
+    // If the input is a number, check if it's a valid enum value
+    if (Object.values(ChainId).includes(input)) {
+      return input as ChainId;
+    }
+  }
+
+  // If the input is not a valid enum value, return undefined
+  throw "Invalid chainId " + input;
+}
 
 export const pinToIPFS = async (
   body: string,
@@ -767,6 +815,95 @@ export const pinFileToIPFS = async (body: FormData) => {
 export const formatCurrency = (value: BigNumber, decimal: number) => {
   return parseFloat(ethers.utils.formatUnits(value.toString(), decimal));
 };
+
+export function formatDateWithOrdinal(date: Date) {
+  const options = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  } as const;
+
+  const formatter = new Intl.DateTimeFormat("en-US", options);
+  const formattedDate = formatter.format(date);
+
+  const dayOfMonth = date.getDate();
+  const pluralRules = new Intl.PluralRules("en-US", { type: "ordinal" });
+  const suffix = {
+    one: "st",
+    two: "nd",
+    few: "rd",
+    other: "th",
+    many: "",
+    zero: "",
+  }[pluralRules.select(dayOfMonth)];
+
+  return `${formattedDate.replace(
+    dayOfMonth.toString(),
+    `${dayOfMonth}${suffix}`
+  )}`;
+}
+
+export const votingTokens = [
+  ...MAINNET_TOKENS,
+  ...OPTIMISM_MAINNET_TOKENS,
+  ...FANTOM_MAINNET_TOKENS,
+  ...FANTOM_TESTNET_TOKENS,
+  ...PGN_TESTNET_TOKENS,
+  ...PGN_MAINNET_TOKENS,
+  ...ARBITRUM_TOKENS,
+  ...ARBITRUM_GOERLI_TOKENS,
+  ...AVALANCHE_TOKENS,
+  ...FUJI_TOKENS,
+  ...POLYGON_TOKENS,
+  ...POLYGON_MUMBAI_TOKENS,
+  ...ZKSYNC_ERA_TESTNET_TOKENS,
+  ...ZKSYNC_ERA_MAINNET_TOKENS,
+  ...BASE_TOKENS,
+];
+
+export const ROUND_PAYOUT_DIRECT = "allov1.Direct";
+export const ROUND_PAYOUT_DIRECT_OLD = "DIRECT";
+
+export const isDirectRound = (round: Round) =>
+  // @ts-expect-error support old rounds
+  round.payoutStrategy.strategyName === ROUND_PAYOUT_DIRECT_OLD ||
+  round.payoutStrategy.strategyName === ROUND_PAYOUT_DIRECT;
+
+export const isInfiniteDate = (roundTime: Date) =>
+  roundTime.toString() === "Invalid Date";
+
+export const formatUTCDateAsISOString = (date: Date): string => {
+  // @ts-expect-error remove when DG support is merged
+  if (isNaN(date)) {
+    return "";
+  }
+  const isoString = date.toISOString();
+  return isoString.slice(0, 10).replace(/-/g, "/");
+};
+export const padSingleDigitNumberWithZero = (i: number): string =>
+  i < 10 ? "0" + i : i.toString();
+
+export const getUTCTime = (date: Date): string => {
+  const utcTime = [
+    padSingleDigitNumberWithZero(date.getUTCHours()),
+    padSingleDigitNumberWithZero(date.getUTCMinutes()),
+  ];
+
+  return utcTime.join(":") + " UTC";
+};
+
+export function createIpfsImageUrl(args: {
+  baseUrl: string;
+  cid: string;
+  height?: number;
+}): string {
+  return new URL(
+    `/ipfs/${args.cid}${args.height ? `?img-height=${args.height}` : ""}`,
+    args.baseUrl
+  ).toString();
+}
+
 
 export const findRoundById = (rounds: Round[], roundId: string) => {
   return roundId

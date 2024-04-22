@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext } from "react";
 import { Round } from "../api/types";
 
@@ -13,8 +15,8 @@ const roundsContext = createContext({
   },
   roundsLoading: true,
   setRoundsLoading: (roundsLoading: boolean) => {
-    roundsLoading = roundsLoading
-  }
+    roundsLoading = roundsLoading;
+  },
 });
 
 export default roundsContext;
