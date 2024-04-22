@@ -16,15 +16,12 @@ import { useRoundById } from "../../../hooks/useRoundById";
 import TweetEmbed from "react-tweet-embed";
 import {
   ChainId,
-  createIpfsImageUrl,
-  formatDateWithOrdinal,
   isDirectRound,
   isInfiniteDate,
   pinFileToIPFS,
   votingTokens,
 } from "../../../api/utils";
 import NotFoundPage from "../../../components/not-found-page";
-import { Spinner } from "../../../components/spinner";
 import {
   useAccount,
   useNetwork,
@@ -37,12 +34,6 @@ import { ethers } from "ethers";
 import * as Papa from "papaparse";
 import { UnparseObject } from "papaparse";
 import GenericModal from "../../../components/generic-modal";
-// import {
-//   Application,
-//   DistributionMatch,
-//   RoundCategory,
-//   useDataLayer,
-// } from "data-layer";
 import { useRoundApprovedApplications } from "../../../hooks/useRoundApprovedApplications";
 import {
   CameraIcon,
@@ -57,9 +48,6 @@ import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 import { FarcasterEmbed } from "react-farcaster-embed/dist/client";
 import "react-farcaster-embed/dist/styles.css";
 import ConfirmationModal from "../../../components/confirmation-modal";
-// import { ProgressStep, useUpdateRound } from "../../context/UpdateRoundContext";
-// import { useAllo } from "../api/AlloWrapper";
-// import BeforeRoundStart from "./BeforeRoundStart";
 import {
   AnyJson,
   Application,
@@ -97,7 +85,6 @@ import { createWaitForIndexerSyncTo } from "../../../api/indexer";
 import { createPinataIpfsUploader } from "../../../api/ipfs";
 import ProgressModal from "../../../components/progress-modal";
 import ErrorModal from "../../../components/error-modal";
-import ImageInput from "../../../components/ImageInput";
 import ReactCrop, {
   Crop,
   PixelCrop,
@@ -107,9 +94,6 @@ import ReactCrop, {
 import "react-image-crop/dist/ReactCrop.css";
 import Image from "next/image";
 import IpfsImage from "../../../components/ipfs-image";
-import ImageCrop from "../../../components/ImageCrop";
-// import { getAlloVersion } from "common/src/config";
-// import { ErrorBoundary } from "@sentry/react";
 const Plot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
   loading: () => <>Loading...</>,
@@ -1209,16 +1193,12 @@ const Stats = ({
 
   return (
     <div className="max-w-6xl m-auto w-full">
-      <div
-        className={`${
-          matchingCapPercent ? "xl:grid-cols-4" : "xl:grid-cols-3"
-        } grid grid-cols-2 gap-2 sm:gap-4`}
-      >
+      <div className={`xl:grid-cols-3 grid grid-cols-2 gap-2 sm:gap-4`}>
         <StatCard
-          statValue={`${formatAmount(tokenAmount, true)} ${tokenSymbol} \n\n
-            ${
-              matchingPoolUSD ? `($${formatAmount(matchingPoolUSD ?? 0)})` : ""
-            }`}
+          statValue={`${formatAmount(tokenAmount, true)} ${tokenSymbol}`}
+          secondaryStatValue={`${
+            matchingPoolUSD ? `($${formatAmount(matchingPoolUSD ?? 0)})` : ""
+          }`}
           statName="Matching Pool"
           isValueLoading={statsLoading}
         />
@@ -1229,7 +1209,8 @@ const Stats = ({
         />
         {!!matchingCapPercent && (
           <StatCard
-            statValue={`${matchingCapPercent.toFixed()}%  \n\n (${formatAmount(
+            statValue={`${matchingCapPercent.toFixed()}% `}
+            secondaryStatValue={`(${formatAmount(
               matchingCapTokenValue,
               true
             )} ${tokenSymbol})`}
@@ -1237,17 +1218,7 @@ const Stats = ({
             isValueLoading={statsLoading}
           />
         )}
-        {!!round.roundEndTime && (
-          <StatCard
-            statValue={formatDateWithOrdinal(new Date(round.roundEndTime ?? 0))}
-            statName={
-              new Date() > new Date(round.roundEndTime)
-                ? "Round ended on"
-                : "Round ends on"
-            }
-            isValueLoading={statsLoading}
-          />
-        )}
+
         <StatCard
           statValue={formatAmount(totalProjects, true)}
           statName="Total Projects"
@@ -1264,15 +1235,6 @@ const Stats = ({
           statName="Total Donors"
           isValueLoading={statsLoading}
         />
-        {!!matchingCapPercent && (
-          <StatCard
-            statValue={projectsReachedMachingCap.toString()}
-            statName={`${
-              projectsReachedMachingCap === 1 ? "Project" : "Projects"
-            } Reaching Matching Cap`}
-            isValueLoading={statsLoading}
-          />
-        )}
       </div>
     </div>
   );
@@ -1280,10 +1242,12 @@ const Stats = ({
 
 const StatCard = ({
   statValue,
+  secondaryStatValue,
   statName,
   isValueLoading,
 }: {
   statValue: string;
+  secondaryStatValue?: string;
   statName: string;
   isValueLoading?: boolean;
 }): JSX.Element => {
@@ -1292,9 +1256,16 @@ const StatCard = ({
       {isValueLoading ? (
         <div className="w-[80%] rounded text-5 sm:h-9 mb-4 bg-grey-200 animate-pulse" />
       ) : (
-        <p className="text-xl sm:text-3xl pb-4 font-mono prose tracking-tighter">
-          {statValue}
-        </p>
+        <div className="pb-4">
+          <p className="text-xl sm:text-3xl font-mono prose tracking-tighter">
+            {statValue}
+          </p>
+          {!!secondaryStatValue?.length && (
+            <p className="text-sm font-mono font-medium prose tracking-tighter">
+              {secondaryStatValue}
+            </p>
+          )}
+        </div>
       )}
 
       <p className="text-sm text-grey-400 font-bold max-w-[20ch]">{statName}</p>
@@ -2058,20 +2029,20 @@ const ImageEditor = ({
     setNewImgSrc("");
   }
 
-  const resetUploadedImg = () => {
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-    }
-    blobUrlRef.current = "";
-    onChange(undefined);
-    setNewImgSrc("");
-  };
-
   useEffect(() => {
+    const resetUploadedImg = () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+      blobUrlRef.current = "";
+      onChange(undefined);
+      setNewImgSrc("");
+    };
+
     if (!canEdit) {
       resetUploadedImg();
     }
-  }, [canEdit]);
+  }, [canEdit, onChange]);
 
   const handleSelectImg = async () => {
     await handleChange();
