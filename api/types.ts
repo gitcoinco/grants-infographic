@@ -352,9 +352,7 @@ export type UpdateRoundData = {
   roundId: string;
   roundAddress: Hex;
   data: UpdateRoundParams;
-  // TODO
   allo: Allo;
-  // allo: Allo;
   roundCategory?: RoundCategory;
 };
 

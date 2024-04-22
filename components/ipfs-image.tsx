@@ -30,7 +30,7 @@ export default function IpfsImage({
     setSrc("");
     try {
       let response = await fetch(
-        `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${cid}`
+        `${process.env.NEXT_PUBLIC_IPFS_BASE_URL}/ipfs/${cid}`
       );
       if (!response.ok) throw new Error("Failed to fetch image");
       const blob = await response.blob();

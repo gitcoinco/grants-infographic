@@ -727,13 +727,11 @@ export const graphql_fetch = async (
  * @param cid - the unique content identifier that points to the data
  */
 
-const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL
-  ? process.env.NEXT_PUBLIC_GATEWAY_URL
-  : "https://gateway.pinata.cloud";
+const GATEWAY_URL = process.env.NEXT_PUBLIC_IPFS_BASE_URL ?? "";
 
 export const fetchFromIPFS = (cid: string, roundInfo?: boolean) => {
   const IFPSUrl = roundInfo ? GATEWAY_URL : "ipfs.io";
-  return fetch(`https://${IFPSUrl}/ipfs/${cid}`, {
+  return fetch(`${IFPSUrl}/ipfs/${cid}`, {
     next: { tags: [roundInfo ? "roundInfo" : ""] },
   }).then((resp) => {
     if (resp.ok) {
@@ -743,7 +741,6 @@ export const fetchFromIPFS = (cid: string, roundInfo?: boolean) => {
     return Promise.reject(resp);
   });
 };
-
 
 export function parseChainId(input: string | number): ChainId {
   if (typeof input === "string") {
@@ -903,7 +900,6 @@ export function createIpfsImageUrl(args: {
     args.baseUrl
   ).toString();
 }
-
 
 export const findRoundById = (rounds: Round[], roundId: string) => {
   return roundId

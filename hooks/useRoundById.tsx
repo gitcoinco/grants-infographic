@@ -1,5 +1,5 @@
 "use client";
-import { getRoundForExplorer } from "../api/round-v2";
+import { getRoundForExplorer } from "../api/round";
 import { Round } from "../api/types";
 import React, { useState, useEffect } from "react";
 

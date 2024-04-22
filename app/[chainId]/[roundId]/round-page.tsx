@@ -94,7 +94,7 @@ import ReactCrop, {
 import "react-image-crop/dist/ReactCrop.css";
 import Image from "next/image";
 import IpfsImage from "../../../components/ipfs-image";
-const Plot = dynamic(() => import("../../../components/grant-plot"), {
+const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
   loading: () => <>Loading...</>,
 });
@@ -600,7 +600,13 @@ const ReportCard = ({
   ];
 
   useEffect(() => {
-    if (round && isRoundOperator) setIsOperatorNoticeOpen(true);
+    const reportCardMetadata = round.roundMetadata?.reportCardMetadata;
+    if (
+      round &&
+      isRoundOperator &&
+      !JSON.stringify(reportCardMetadata)?.length
+    )
+      setIsOperatorNoticeOpen(true);
   }, [round, isRoundOperator]);
 
   function downloadProjectsCSV() {
@@ -795,7 +801,7 @@ const ReportCard = ({
     return (
       <GenericModal
         title="Hey, It looks like you’re an operator for this round!"
-        titleSize={"sm"}
+        titleSize={"lg"}
         body={<ShareModalBody />}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
@@ -1278,8 +1284,6 @@ const ProjectsPlot = ({
 }: {
   applications: ApplicationWithMatchingData[];
 }): JSX.Element => {
-  const { width } = useWindowDimensions();
-
   const labelsAndValues = useMemo(() => {
     const amounts: number[] = [];
     const projectNames: string[] = [];
@@ -1308,138 +1312,11 @@ const ProjectsPlot = ({
     return { amounts, projectNames, parents };
   }, [applications]);
 
-  const colors = [
-    "#FCD661",
-    "#645AD8",
-    "#FFC2EE",
-    "#25BDCE",
-    "#5F94BC",
-    "#B3DE9F",
-    "#FF9776",
-    "#FFEFBE",
-    "#D9D6FF",
-    "#FFE5F8",
-    "#C8F6F6",
-    "#D3EDFE",
-    "#DBF0DB",
-    "#FFD9CE",
-    "#FBC624",
-    "#6935FF",
-    "#FF00B8",
-    "#73E2E2",
-    "#15B8DC",
-    "#248B5A",
-    "#FF7043",
-  ];
-
-  useEffect(() => {
-    window.matchMedia("(min-width: 37.5rem)").matches
-      ? setLayout({
-          font: { size: 18 },
-          showlegend: false,
-          displayModeBar: false,
-          margin: {
-            t: 30,
-            b: 25,
-            l: 0,
-            r: 0,
-            pad: 0,
-          },
-          width: undefined,
-          scene: {
-            xaxis: {
-              spikecolor: "#1fe5bd",
-              spikesides: false,
-              spikethickness: 6,
-            },
-            yaxis: {
-              spikecolor: "#1fe5bd",
-              spikesides: false,
-              spikethickness: 6,
-            },
-            zaxis: {
-              spikecolor: "#1fe5bd",
-              spikethickness: 6,
-            },
-          },
-        })
-      : setLayout({
-          font: { size: 18 },
-          showlegend: false,
-          displayModeBar: false,
-          margin: { t: 10, b: 25, l: 0, r: 0, pad: 0 },
-          width: width - 120,
-          scene: {
-            xaxis: {
-              spikecolor: "#1fe5bd",
-              spikesides: false,
-              spikethickness: 6,
-            },
-            yaxis: {
-              spikecolor: "#1fe5bd",
-              spikesides: false,
-              spikethickness: 6,
-            },
-            zaxis: {
-              spikecolor: "#1fe5bd",
-              spikethickness: 6,
-            },
-          },
-        });
-  }, [width]);
-
-  const [layout, setLayout] = useState({
-    font: { size: 18 },
-    showlegend: false,
-    displayModeBar: false,
-    margin: { t: 30, b: 25, l: 0, r: 0, pad: 0 },
-    width: undefined as number | undefined,
-    scene: {
-      xaxis: {
-        spikecolor: "#1fe5bd",
-        spikesides: false,
-        spikethickness: 6,
-      },
-      yaxis: {
-        spikecolor: "#1fe5bd",
-        spikesides: false,
-        spikethickness: 6,
-      },
-      zaxis: {
-        spikecolor: "#1fe5bd",
-        spikethickness: 6,
-      },
-    },
-  });
-
   return (
     <div className="bg-sand w-full max-w-4xl m-auto">
-      <Plot
-        className={`!bg-sand w-full [&_*]:!mx-auto color-sand ![&_*]:bg-sand [&_*]:max-w-[${
-          width - 50
-        }px] max-w-[${width - 50}px]`}
-        data={[
-          {
-            type: "treemap",
-            labels: labelsAndValues.projectNames,
-            parents: labelsAndValues.parents,
-            values: labelsAndValues.amounts,
-            text: labelsAndValues.amounts.map(
-              (value) => `$${formatAmount(value.toFixed(2))}`
-            ),
-            textinfo: "label+text",
-            hoverinfo: "label+text",
-            title: { text: "label" },
-            mode: "markers",
-            textfont: { size: 18 },
-            marker: {
-              line: { width: 2 },
-
-              colors,
-            },
-          },
-        ]}
-        layout={layout}
+      <GrantPlot
+        values={labelsAndValues.amounts}
+        labels={labelsAndValues.projectNames}
       />
     </div>
   );
@@ -1453,15 +1330,6 @@ export function RoundBanner(props: {
 }) {
   const BANNER_WIDTH = 1280,
     BANNER_HEIGHT = 320;
-
-  // const ipfsBaseUrl = process.env.NEXT_PUBLIC_IPFS_BASE_URL ?? "";
-  // const roundBannerUrl = props.bannerImgCid?.length
-  //   ? createIpfsImageUrl({
-  //       baseUrl: ipfsBaseUrl,
-  //       cid: props.bannerImgCid,
-  //       height: props.resizeHeight ? props.resizeHeight * 2 : undefined,
-  //     })
-  //   : undefined;
 
   return (
     <ImageEditor
@@ -1482,10 +1350,8 @@ export function RoundLogo(props: {
   changeHandler: (logo?: Blob | undefined) => void;
   roundName?: string;
 }): JSX.Element {
-  const ipfsBaseUrl = process.env.NEXT_PUBLIC_IPFS_BASE_URL ?? "";
-
-  const LOGO_WIDTH = 400,
-    LOGO_HEIGHT = 400;
+  const LOGO_WIDTH = 128,
+    LOGO_HEIGHT = 128;
 
   // const logoImageUrl = props.imageCid
   //   ? createIpfsImageUrl({
@@ -1618,7 +1484,6 @@ const ShareButton = ({
 
 ${window.location.href}`;
 
-  // TODO: change the subdomain for reportcards.gitcoin.to to share.gitcoin.co, replace embedURL (`share.gitcoin.co/${chainId}/${roundId}`) and remove ${window.location.href} from the intent's text
   const embedURL = "";
 
   const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
@@ -1874,9 +1739,7 @@ const useAllo = (alloVersion: "allo-v1" | "allo-v2") => {
     },
     pinata: {
       jwt: process.env.NEXT_PUBLIC_PINATA_JWT ?? "",
-      baseUrl: "https://api.pinata.cloud",
-      // process.env.NEXT_PUBLIC_GATEWAY_URL ?? "https://gateway.pinata.cloud",
-      //
+      baseUrl: process.env.NEXT_PUBLIC_PINATA_BASE_URL ?? "",
     },
     dataLayer: {
       gsIndexerEndpoint: process.env.NEXT_PUBLIC_INDEXER_V2_API_URL ?? "",
@@ -2058,9 +1921,7 @@ const ImageEditor = ({
             src={blobUrlRef.current}
             width={imageWidth}
             height={imageHeight}
-            className={`w-full h-auto ${
-              type == "banner" ? "aspect-[4]" : "aspect-square"
-            } ${
+            className={`${type == "banner" ? "aspect-[4]" : "aspect-square"} ${
               type === "logo"
                 ? "h-32 w-32 rounded-full ring-4 ring-white bg-white"
                 : ""
@@ -2070,12 +1931,10 @@ const ImageEditor = ({
           <IpfsImage
             type={type}
             cid={imgCid}
-            alt={`${roundName} banner`}
+            alt={roundName}
             width={imageWidth}
             height={imageHeight}
-            className={`w-full h-auto ${
-              type == "banner" ? "aspect-[4]" : "aspect-square"
-            } ${
+            className={`${type == "banner" ? "aspect-[4]" : "aspect-square"} ${
               type === "logo"
                 ? "h-32 w-32 rounded-full ring-4 ring-white bg-white"
                 : ""
@@ -2091,9 +1950,7 @@ const ImageEditor = ({
             alt=""
             width={imageWidth}
             height={imageHeight}
-            className={`w-full h-auto ${
-              type == "banner" ? "aspect-[4]" : "aspect-square"
-            } ${
+            className={`${type == "banner" ? "aspect-[4]" : "aspect-square"} ${
               type === "logo"
                 ? "h-32 w-32 rounded-full ring-4 ring-white bg-white"
                 : ""
@@ -2167,7 +2024,7 @@ const ImageEditor = ({
                     onLoad={onImageLoad}
                     width={imageWidth}
                     height={imageHeight}
-                    className={`w-full h-auto  object-fill rounded-3xl shadow-lg ${
+                    className={`object-fill rounded-3xl shadow-lg ${
                       type === "logo"
                         ? "h-32 w-32 rounded-full ring-4 ring-white bg-white"
                         : ""

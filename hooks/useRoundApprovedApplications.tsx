@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import { Application } from "../api/types";
-import { getApplication } from "../api/round-v2";
+import { getApplication } from "../api/round";
 
 type Params = {
   chainId?: number;
@@ -8,9 +8,7 @@ type Params = {
   projectIds?: string[];
 };
 
-export function useRoundApprovedApplications(
-  params: Params,
-) {
+export function useRoundApprovedApplications(params: Params) {
   const shouldFetch = Object.values(params).every(Boolean);
   return useSWR(
     shouldFetch ? ["allApprovedApplications", params] : null,
