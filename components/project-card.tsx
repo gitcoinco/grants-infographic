@@ -4,7 +4,6 @@ import { formatAmount } from "../api/utils";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import EditIcon from "./edit-icon";
-import Editor from "./editor";
 
 export default function ProjectCard({
   imgSrc,
