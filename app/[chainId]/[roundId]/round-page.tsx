@@ -20,7 +20,7 @@ import {
   isInfiniteDate,
   pinFileToIPFS,
   votingTokens,
-} from "../../../api/utils";
+} from "../../../functions/utils";
 import NotFoundPage from "../../../components/not-found-page";
 import {
   useAccount,
@@ -63,13 +63,13 @@ import {
   UpdateRoundData,
   VotingToken,
   getRoundStrategyTitle,
-} from "../../../api/types";
+} from "../../../functions/types";
 import {
   CHAINS,
   formatUTCDateAsISOString,
   getDaysLeft,
   getUTCTime,
-} from "../../../api/utils";
+} from "../../../functions/utils";
 import { Badge, Button } from "../../styles";
 import { CalendarIcon } from "../../../components/icons";
 import { useTokenPrice } from "../../../hooks/useTokenPrice";
@@ -77,12 +77,12 @@ import useWindowDimensions from "../../../hooks/useWindowDimensions";
 import dynamic from "next/dynamic";
 import Loading from "../../loading";
 import React from "react";
-import { AlloV2 } from "../../../api/allo-v2";
-import { AlloV1 } from "../../../api/allo-v1";
-import { Allo } from "../../../api/allo";
-import { createViemTransactionSender } from "../../../api/transaction-sender";
-import { createWaitForIndexerSyncTo } from "../../../api/indexer";
-import { createPinataIpfsUploader } from "../../../api/ipfs";
+import { AlloV2 } from "../../../functions/allo-v2";
+import { AlloV1 } from "../../../functions/allo-v1";
+import { Allo } from "../../../functions/allo";
+import { createViemTransactionSender } from "../../../functions/transaction-sender";
+import { createWaitForIndexerSyncTo } from "../../../functions/indexer";
+import { createPinataIpfsUploader } from "../../../functions/ipfs";
 import ProgressModal from "../../../components/progress-modal";
 import ErrorModal from "../../../components/error-modal";
 import ReactCrop, {

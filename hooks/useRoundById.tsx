@@ -1,6 +1,6 @@
 "use client";
-import { getRoundForExplorer } from "../api/round";
-import { Round } from "../api/types";
+import { getRoundForExplorer } from "../functions/round";
+import { Round } from "../functions/types";
 import React, { useState, useEffect } from "react";
 
 export const useRoundById = (

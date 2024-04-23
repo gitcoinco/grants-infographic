@@ -1,6 +1,6 @@
 import { Address } from "viem";
-import { getRoundForExplorer } from "../../../api/round";
-import { Application, Round } from "../../../api/types";
+import { getRoundForExplorer } from "../../../functions/round";
+import { Application, Round } from "../../../functions/types";
 import ViewRoundStats from "./round-page";
 import { Metadata, ResolvingMetadata } from "next";
 import { PAGE_DESCRIPTION } from "../../../constants";

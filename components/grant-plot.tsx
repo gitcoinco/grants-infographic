@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import useWindowDimensions from "../hooks/useWindowDimensions";
-import { formatAmount } from "../api/utils";
+import { formatAmount } from "../functions/utils";
 const Plot = require("react-plotly.js").default;
 
 export default function GrantPlot({

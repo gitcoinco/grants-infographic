@@ -22,7 +22,7 @@ import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 import { createContext, useState } from "react";
 import filtersContext, { Filters } from "../contexts/filtersContext";
-import { Round } from "../api/types";
+import { Round } from "../functions/types";
 import roundsContext from "../contexts/roundsContext";
 import Script from "next/script";
 import { merge } from "lodash";

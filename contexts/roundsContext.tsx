@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext } from "react";
-import { Round } from "../api/types";
+import { Round } from "../functions/types";
 
 export type Filters = {
   chainId: number;

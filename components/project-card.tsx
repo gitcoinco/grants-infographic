@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { useState } from "react";
-import { formatAmount } from "../api/utils";
+import { formatAmount } from "../functions/utils";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import EditIcon from "./edit-icon";

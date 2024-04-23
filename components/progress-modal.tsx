@@ -1,6 +1,6 @@
 import { Fragment, ReactNode } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { ProgressStatus } from "../api/types";
+import { ProgressStatus } from "../functions/types";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 export type Step = {

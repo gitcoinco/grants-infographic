@@ -1,6 +1,6 @@
 import useSWR from "swr";
-import { Application } from "../api/types";
-import { getApplication } from "../api/round";
+import { Application } from "../functions/types";
+import { getApplication } from "../functions/round";
 
 type Params = {
   chainId?: number;
