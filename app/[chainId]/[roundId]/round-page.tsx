@@ -486,7 +486,10 @@ const ReportCard = ({
   );
   const { address } = useAccount();
   const isRoundOperator =
-    !!address && !!operatorWallets?.includes(address.toLowerCase());
+    !!address &&
+    !!operatorWallets?.includes(address.toLowerCase()) &&
+    // editing on allo-v1 rounds is not supported
+    alloVersion === "allo-v2";
   const { data: tokenPrice } = useTokenPrice(token?.redstoneTokenId);
 
   const applicationsWithMetadataAndMatchingData:
@@ -601,11 +604,7 @@ const ReportCard = ({
 
   useEffect(() => {
     const reportCardMetadata = round.roundMetadata?.reportCardMetadata;
-    if (
-      round &&
-      isRoundOperator &&
-      !JSON.stringify(reportCardMetadata)?.length
-    )
+    if (round && isRoundOperator && !JSON.stringify(reportCardMetadata)?.length)
       setIsOperatorNoticeOpen(true);
   }, [round, isRoundOperator]);
 
@@ -929,134 +928,136 @@ const ReportCard = ({
           </aside>
         </div>
       )}
-      <div className="max-w-7xl m-auto">
-        <h2 className="w-fit m-auto md:text-3xl text-2xl mb-8 font-modern-era-medium tracking-tighter">
-          What people are tweeting{" "}
-        </h2>
+      {alloVersion === "allo-v2" && (
+        <div className="max-w-7xl m-auto">
+          <h2 className="w-fit m-auto md:text-3xl text-2xl mb-8 font-modern-era-medium tracking-tighter">
+            What people are tweeting{" "}
+          </h2>
 
-        {isEditorOpen && isRoundOperator && formProps ? (
-          <div className="w-full sm:min-w-[50rem]">
-            <p className="mb-4">
-              Add up to a maximum of 6 Twitter/Warpcast links below:
-            </p>
+          {isEditorOpen && isRoundOperator && formProps ? (
+            <div className="w-full sm:min-w-[50rem]">
+              <p className="mb-4">
+                Add up to a maximum of 6 Twitter/Warpcast links below:
+              </p>
 
-            <FieldArray name="tweets">
-              {({ insert, remove, push }) => (
-                <div>
-                  {formProps.values.tweets?.length > 0 &&
-                    formProps.values.tweets.map((tweetURL, index) => (
-                      <div key={index}>
-                        <div className="flex flex-col gap-2">
-                          <label htmlFor={`tweets.${index}`}>
-                            Twitter / Warpcast post URL
-                          </label>
-                          <div className="flex flex-col gap-0.5">
-                            <div className="flex gap-4 items-center justify-between">
-                              <Field
-                                className="w-full border border-grey-300"
-                                name={`tweets.${index}`}
-                                placeholder="https://twitter.com/umarkhaneth/status/1718319104178753678"
-                                type="url"
-                                validate={validateSocialPostUrl}
-                              />
-                              <div>
-                                <button
-                                  type="button"
-                                  className="text-3xl hover:opacity-75 transition-all h-fit"
-                                  onClick={() => remove(index)}
-                                >
-                                  &times;
-                                </button>
-                              </div>
-                            </div>
-                            {!!formProps.errors.tweets &&
-                              formProps.errors.tweets[index] &&
-                              formProps.touched.tweets !== undefined &&
-                              formProps.touched.tweets && (
-                                <div className="text-sm text-[#e5524d]">
-                                  {formProps.errors.tweets[index]}
+              <FieldArray name="tweets">
+                {({ insert, remove, push }) => (
+                  <div>
+                    {formProps.values.tweets?.length > 0 &&
+                      formProps.values.tweets.map((tweetURL, index) => (
+                        <div key={index}>
+                          <div className="flex flex-col gap-2">
+                            <label htmlFor={`tweets.${index}`}>
+                              Twitter / Warpcast post URL
+                            </label>
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex gap-4 items-center justify-between">
+                                <Field
+                                  className="w-full border border-grey-300"
+                                  name={`tweets.${index}`}
+                                  placeholder="https://twitter.com/umarkhaneth/status/1718319104178753678"
+                                  type="url"
+                                  validate={validateSocialPostUrl}
+                                />
+                                <div>
+                                  <button
+                                    type="button"
+                                    className="text-3xl hover:opacity-75 transition-all h-fit"
+                                    onClick={() => remove(index)}
+                                  >
+                                    &times;
+                                  </button>
                                 </div>
-                              )}
+                              </div>
+                              {!!formProps.errors.tweets &&
+                                formProps.errors.tweets[index] &&
+                                formProps.touched.tweets !== undefined &&
+                                formProps.touched.tweets && (
+                                  <div className="text-sm text-[#e5524d]">
+                                    {formProps.errors.tweets[index]}
+                                  </div>
+                                )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  <button
-                    type="button"
-                    className={`${
-                      (formProps.values.tweets?.length ?? 0) >= 6
-                        ? "cursor-not-allowed opacity-70"
-                        : "cursor-pointer hover:opacity-80"
-                    } mt-8 transition-all duration-300 rounded-lg px-4 py-2.5 font-mono border`}
-                    onClick={() => push("")}
-                    disabled={(formProps.values.tweets?.length ?? 0) >= 6}
-                  >
-                    Add tweet
-                  </button>
-                </div>
-              )}
-            </FieldArray>
-          </div>
-        ) : (
-          <div className="md:w-[80vw] max-w-4xl m-auto dark">
-            <ResponsiveMasonry
-              columnsCountBreakPoints={{
-                350: 1,
-                750:
-                  (round.roundMetadata?.reportCardMetadata?.socialPostUrls
-                    ?.length ?? 0) >= 2
-                    ? 2
-                    : 1,
-              }}
-            >
-              <Masonry gutter="0.5rem">
-                {!round.roundMetadata?.reportCardMetadata?.socialPostUrls
-                  ?.length ? (
-                  <div>
-                    <TweetEmbed
-                      tweetId={getTweetId(defaultTweetURL)}
-                      options={{
-                        theme: "dark",
-                        align: "center",
-                        dnt: "true",
-                      }}
-                    />
+                      ))}
+                    <button
+                      type="button"
+                      className={`${
+                        (formProps.values.tweets?.length ?? 0) >= 6
+                          ? "cursor-not-allowed opacity-70"
+                          : "cursor-pointer hover:opacity-80"
+                      } mt-8 transition-all duration-300 rounded-lg px-4 py-2.5 font-mono border`}
+                      onClick={() => push("")}
+                      disabled={(formProps.values.tweets?.length ?? 0) >= 6}
+                    >
+                      Add tweet
+                    </button>
                   </div>
-                ) : (
-                  round.roundMetadata?.reportCardMetadata?.socialPostUrls.map(
-                    (url) => (
-                      <div key={url}>
-                        {getSocialPostPlatform(url) === "TWITTER" ? (
-                          <div className="mx-auto">
-                            {/* new library */}
-                            {/* <Tweet id={getTweetId(url)} /> */}
-
-                            {/* prev library */}
-                            <TweetEmbed
-                              tweetId={getTweetId(url)}
-                              options={{
-                                theme: "dark",
-                                align: "center",
-                                dnt: "true",
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="mx-auto">
-                            {/* <ErrorBoundary> */}
-                            <FarcasterEmbed url={url} />
-                            {/* </ErrorBoundary> */}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  )
                 )}
-              </Masonry>
-            </ResponsiveMasonry>
-          </div>
-        )}
-      </div>
+              </FieldArray>
+            </div>
+          ) : (
+            <div className="md:w-[80vw] max-w-4xl m-auto dark">
+              <ResponsiveMasonry
+                columnsCountBreakPoints={{
+                  350: 1,
+                  750:
+                    (round.roundMetadata?.reportCardMetadata?.socialPostUrls
+                      ?.length ?? 0) >= 2
+                      ? 2
+                      : 1,
+                }}
+              >
+                <Masonry gutter="0.5rem">
+                  {!round.roundMetadata?.reportCardMetadata?.socialPostUrls
+                    ?.length ? (
+                    <div>
+                      <TweetEmbed
+                        tweetId={getTweetId(defaultTweetURL)}
+                        options={{
+                          theme: "dark",
+                          align: "center",
+                          dnt: "true",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    round.roundMetadata?.reportCardMetadata?.socialPostUrls.map(
+                      (url) => (
+                        <div key={url}>
+                          {getSocialPostPlatform(url) === "TWITTER" ? (
+                            <div className="mx-auto">
+                              {/* new library */}
+                              {/* <Tweet id={getTweetId(url)} /> */}
+
+                              {/* prev library */}
+                              <TweetEmbed
+                                tweetId={getTweetId(url)}
+                                options={{
+                                  theme: "dark",
+                                  align: "center",
+                                  dnt: "true",
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="mx-auto">
+                              {/* <ErrorBoundary> */}
+                              <FarcasterEmbed url={url} />
+                              {/* </ErrorBoundary> */}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    )
+                  )}
+                </Masonry>
+              </ResponsiveMasonry>
+            </div>
+          )}
+        </div>
+      )}
       {!!applicationsWithMetadataAndMatchingData && !!totalUSDCrowdfunded && (
         <RoundLeaderboard
           applications={applicationsWithMetadataAndMatchingData}
