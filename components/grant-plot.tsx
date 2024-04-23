@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import useWindowDimensions from "../hooks/useWindowDimensions";
-import { formatAmount } from "../api/utils";
+import { formatAmount } from "../functions/utils";
 const Plot = require("react-plotly.js").default;
 
 export default function GrantPlot({
@@ -13,37 +13,29 @@ export default function GrantPlot({
 }) {
   const { height, width } = useWindowDimensions();
 
-  const colors = Array(20)
-    .fill([
-      "#F17A4C",
-      "#FADBCF80",
-      "#441151",
-      "#7D70BA",
-      "#6060D3",
-      "#F6B79D",
-      "#452103",
-      "#F8D66E",
-      "#F7C6EC",
-      "#CA61C3",
-      "#769883",
-      "#EFCFE3",
-      "#EAF2D7",
-      "#B3DEE2",
-      "#2EC4B6",
-      "#883677",
-      "#FFBF00",
-      "#ACF7C1",
-      "#F2CCC3",
-      "#3F84E5",
-      "#DEC1FF",
-      "#03B5AA",
-      "#F2E86D",
-      "#86BA90",
-      "#5C0029",
-      "#8AA29E",
-      "#7C6A0A",
-    ])
-    .flat();
+  const colors = [
+    "#FCD661",
+    "#645AD8",
+    "#FFC2EE",
+    "#25BDCE",
+    "#5F94BC",
+    "#B3DE9F",
+    "#FF9776",
+    "#FFEFBE",
+    "#D9D6FF",
+    "#FFE5F8",
+    "#C8F6F6",
+    "#D3EDFE",
+    "#DBF0DB",
+    "#FFD9CE",
+    "#FBC624",
+    "#6935FF",
+    "#FF00B8",
+    "#73E2E2",
+    "#15B8DC",
+    "#248B5A",
+    "#FF7043",
+  ];
 
   useEffect(() => {
     window.matchMedia("(min-width: 37.5rem)").matches
@@ -125,39 +117,41 @@ export default function GrantPlot({
     },
   });
 
-  var parents = Array(values.length).fill("");
+  var parents = Array(values?.length).fill("");
 
   return (
     <div className="bg-sand w-full">
-      <Plot
-        className={`!bg-sand w-full child:w-full color-sand !child:bg-sand child:max-w-[${
-          width - 100
-        }px] max-w-[${width - 100}px]`}
-        data={[
-          {
-            type: "treemap",
-            labels: labels,
-            parents: parents,
-            values: values,
-            text: values.map(
-              (value, i) => `$${formatAmount(value.toFixed(2))}`
-            ),
-            textinfo: "label+text",
-            //@ts-ignore
-            hoverinfo: "label+text",
-            // hoverlabel: {namelength: -1},
-            title: { text: "label" },
-            mode: "markers",
-            textfont: { size: 18 },
-            marker: {
-              line: { width: 2 },
+      {values?.length && labels?.length && (
+        <Plot
+          className={`!bg-sand w-full child:w-full color-sand !child:bg-sand child:max-w-[${
+            width - 100
+          }px] max-w-[${width - 100}px]`}
+          data={[
+            {
+              type: "treemap",
+              labels: labels,
+              parents: parents,
+              values: values,
+              text: values.map(
+                (value, i) => `$${formatAmount(value.toFixed(2))}`
+              ),
+              textinfo: "label+text",
+              //@ts-ignore
+              hoverinfo: "label+text",
+              // hoverlabel: {namelength: -1},
+              title: { text: "label" },
+              mode: "markers",
+              textfont: { size: 18 },
+              marker: {
+                line: { width: 2 },
 
-              colors,
+                colors,
+              },
             },
-          },
-        ]}
-        layout={layout}
-      />
+          ]}
+          layout={layout}
+        />
+      )}
     </div>
   );
 }

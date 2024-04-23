@@ -1,6 +1,11 @@
 import "tailwindcss/tailwind.css";
 import "@rainbow-me/rainbowkit/styles.css";
-import { getDefaultWallets, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import {
+  getDefaultWallets,
+  lightTheme,
+  RainbowKitProvider,
+  Theme,
+} from "@rainbow-me/rainbowkit";
 import type { AppProps } from "next/app";
 import { configureChains, createConfig, WagmiConfig } from "wagmi";
 import "react-quill/dist/quill.snow.css";
@@ -17,9 +22,10 @@ import { alchemyProvider } from "wagmi/providers/alchemy";
 import { publicProvider } from "wagmi/providers/public";
 import { createContext, useState } from "react";
 import filtersContext, { Filters } from "../contexts/filtersContext";
-import { Round } from "../api/types";
+import { Round } from "../functions/types";
 import roundsContext from "../contexts/roundsContext";
 import Script from "next/script";
+import { merge } from "lodash";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [
@@ -60,6 +66,14 @@ function MyApp({ Component, pageProps }: AppProps) {
   const handleSetFilters = (filters: Filters) => {
     setFilters(filters);
   };
+
+  const customRainbowKitTheme = merge(lightTheme(), {
+    colors: {
+      accentColor: "#FFD9CD",
+      accentColorForeground: "#000000",
+    },
+  }) as Theme;
+
   return (
     <>
       {process.env.NODE_ENV === "production" && (
@@ -82,12 +96,16 @@ function MyApp({ Component, pageProps }: AppProps) {
         </>
       )}
       <WagmiConfig config={wagmiConfig}>
-        <RainbowKitProvider chains={chains}>
+        <RainbowKitProvider
+          theme={customRainbowKitTheme}
+          coolMode
+          chains={chains}
+        >
           <roundsContext.Provider
             value={{ rounds, setRounds, roundsLoading, setRoundsLoading }}
           >
             <filtersContext.Provider value={{ filters, setFilters }}>
-                <Component {...pageProps} />
+              <Component {...pageProps} />
             </filtersContext.Provider>
           </roundsContext.Provider>
         </RainbowKitProvider>

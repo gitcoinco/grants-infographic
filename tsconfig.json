@@ -1,18 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
+      "lib": [
+      "es2020",  "esnext"
     ],
+    "module": "commonjs",
+    "target": "es2020",
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -25,6 +23,7 @@
     ]
   },
   "include": [
+    "custom.d.ts",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",

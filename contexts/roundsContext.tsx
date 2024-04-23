@@ -1,5 +1,7 @@
+"use client";
+
 import { createContext } from "react";
-import { Round } from "../api/types";
+import { Round } from "../functions/types";
 
 export type Filters = {
   chainId: number;
@@ -13,8 +15,8 @@ const roundsContext = createContext({
   },
   roundsLoading: true,
   setRoundsLoading: (roundsLoading: boolean) => {
-    roundsLoading = roundsLoading
-  }
+    roundsLoading = roundsLoading;
+  },
 });
 
 export default roundsContext;
