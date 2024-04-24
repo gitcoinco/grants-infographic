@@ -308,7 +308,7 @@ function ViewRoundPageHero({
             <div className="flex items-center gap-4 mb-4">
               <h1
                 data-testid="round-title"
-                className="text-2xl sm:text-3xl font-modern-era-medium text-grey-500"
+                className="text-2xl sm:text-3xl font-medium text-grey-500"
               >
                 {round.roundMetadata?.name}
               </h1>
@@ -316,7 +316,7 @@ function ViewRoundPageHero({
                 <Badge
                   color="blue"
                   rounded="full"
-                  className="flex-shrink-0 px-2.5 font-modern-era-bold"
+                  className="flex-shrink-0 px-2.5 font-bold"
                 >
                   {roundEndsText}
                 </Badge>
@@ -346,7 +346,7 @@ function ViewRoundPageHero({
               <span>on</span>
               <div className="flex items-center">
                 <img
-                  className="w-4 h-4 mt-0.5 mr-1"
+                  className="w-4 h-4 mr-1"
                   src={CHAINS[chainId]?.logo}
                   alt="Round Chain Logo"
                 />
@@ -369,14 +369,14 @@ function ViewRoundPageHero({
                 <span className="mr-2">Donate</span>
                 <CalendarIcon className="w-4 h-4 !text-grey-400 inline-block mr-2" />
                 <span>
-                  <span className="px-2 rounded bg-grey-50">
+                  <span className="px-2 rounded bg-grey-50 py-1">
                     <span className="mr-1">
                       {formatUTCDateAsISOString(round.roundStartTime)}
                     </span>
                     <span>{getUTCTime(round.roundStartTime)}</span>
                   </span>
                   <span className="px-1.5">-</span>
-                  <span className="px-2 rounded bg-grey-50">
+                  <span className="px-2 rounded bg-grey-50 py-1">
                     {!isInfiniteDate(round.roundEndTime) ? (
                       <>
                         <span className="mr-1">
@@ -876,7 +876,7 @@ const ReportCard = ({
         </div>
 
         <div className="max-w-3xl w-full m-auto">
-          <h2 className="md:text-3xl text-2xl mb-8 flex items-center gap-4 font-modern-era-medium tracking-tighter">
+          <h2 className="md:text-3xl text-2xl mb-8 flex items-center gap-4 font-medium tracking-tighter">
             Round stats
           </h2>
 
@@ -886,11 +886,11 @@ const ReportCard = ({
               name="statsDescription"
               rows={4}
               placeholder="Type here..."
-              className="w-full border border-gray-300 text-grey-500 px-2 font-modern-era-medium !text-base -mx-2 -mt-2.5"
+              className="w-full border border-gray-300 text-grey-500 px-2 font-medium !text-base -mx-2 -mt-2.5"
               aria-label={"Round stats page description"}
             />
           ) : (
-            <p className="whitespace-pre-line break-words text-grey-500 font-modern-era-medium">
+            <p className="whitespace-pre-line break-words text-grey-500 font-medium">
               {round.roundMetadata?.reportCardMetadata?.statsDescription ??
                 roundPreamble}
             </p>
@@ -927,7 +927,7 @@ const ReportCard = ({
       )}
       {alloVersion === "allo-v2" && (
         <div className="max-w-7xl m-auto">
-          <h2 className="w-fit m-auto md:text-3xl text-2xl mb-8 font-modern-era-medium tracking-tighter">
+          <h2 className="w-fit m-auto md:text-3xl text-2xl mb-8 font-medium tracking-tighter">
             What people are tweeting{" "}
           </h2>
 
@@ -1384,7 +1384,7 @@ const RoundLeaderboard = ({
   return (
     <div className="max-w-4xl w-full m-auto px-6 py-12 md:p-12 bg-grey-50 rounded-[2rem]">
       <div className="mb-10 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:flex-row flex-col">
-        <h2 className="text-center m-auto md:text-3xl text-2xl font-modern-era-medium tracking-tighter">
+        <h2 className="text-center m-auto md:text-3xl text-2xl font-medium tracking-tighter">
           Leaderboard
         </h2>
       </div>

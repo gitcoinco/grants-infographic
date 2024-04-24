@@ -3,16 +3,32 @@ import AppProviders from "../providers";
 import "tailwindcss/tailwind.css";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { DM_Mono } from "next/font/google";
 import GlobalLayout from "../components/global-layout";
 import { Suspense } from "react";
 import Loading from "./loading";
 import { Metadata } from "next/types";
 import Script from "next/script";
+import localFont from "next/font/local";
 
-const inter = Inter({
+const mono = DM_Mono({
   subsets: ["latin"],
   display: "swap",
+  weight: "400",
+  variable: "--font-dm-mono",
+});
+
+const sans = localFont({
+  src: [
+    {
+      path: "./ModernEra-Regular.woff",
+      weight: "400",
+      style: "normal",
+    },
+    { path: "./modern-era-medium.otf", weight: "500", style: "normal" },
+    { path: "./modern-era-bold.otf", weight: "600", style: "normal" },
+  ],
+  variable: "--font-modern-era",
 });
 
 export const metadata: Metadata = {
@@ -36,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${sans.variable} ${mono.variable} font-sans`}>
       {process.env.NODE_ENV === "production" && (
         <>
           <Script
@@ -59,7 +75,15 @@ export default function RootLayout({
       <body>
         <AppProviders>
           <GlobalLayout>
-            <Suspense fallback={<div className="pt-28"><Loading /></div>}>{children}</Suspense>
+            <Suspense
+              fallback={
+                <div className="pt-28">
+                  <Loading />
+                </div>
+              }
+            >
+              {children}
+            </Suspense>
           </GlobalLayout>
         </AppProviders>
       </body>
