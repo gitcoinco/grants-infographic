@@ -1,7 +1,7 @@
 import { Address } from "viem";
 import { Application, Project, Round, RoundForExplorer } from "./types";
 import { request } from "graphql-request";
-import { getApplicationQuery, getRoundForExplorerQuery } from "./queries";
+import { getApplicationQuery, getApplicationsForExplorerQuery, getRoundForExplorerQuery } from "./queries";
 
 const gsIndexerEndpoint = `${
   process.env.NEXT_PUBLIC_INDEXER_V2_API_URL ?? ""
@@ -28,6 +28,26 @@ export async function getApplication({
   );
 
   return response.application ?? null;
+}
+export async function getApplicationsForExplorer({
+  roundId,
+  chainId,
+}: {
+  roundId: string;
+  chainId: number;
+}): Promise<Application[]> {
+  const requestVariables = {
+    roundId,
+    chainId,
+  };
+
+  const response: { applications: Application[] } = await request(
+    gsIndexerEndpoint,
+    getApplicationsForExplorerQuery,
+    requestVariables
+  );
+
+  return response.applications ?? [];
 }
 
 export async function getRoundForExplorer({

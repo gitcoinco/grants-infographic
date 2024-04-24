@@ -476,9 +476,6 @@ const ReportCard = ({
     useRoundApprovedApplications({
       chainId,
       roundId,
-      projectIds: round.approvedProjects?.map(
-        (proj) => proj.grantApplicationId
-      ),
     });
 
   const operatorWallets = round?.roles?.map(
@@ -1186,7 +1183,6 @@ const Stats = ({
     round.roundMetadata?.quadraticFundingConfig?.matchingFundsAvailable ?? 0;
 
   const { data: poolTokenPrice } = useTokenPrice(token?.redstoneTokenId);
-
   const matchingPoolUSD = poolTokenPrice
     ? Number(poolTokenPrice) * tokenAmount
     : undefined;
