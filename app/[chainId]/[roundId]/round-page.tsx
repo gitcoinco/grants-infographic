@@ -316,7 +316,7 @@ function ViewRoundPageHero({
                 <Badge
                   color="blue"
                   rounded="full"
-                  className="flex-shrink-0 px-2.5 font-bold"
+                  className="flex-shrink-0 px-2.5 font-bold font-sans"
                 >
                   {roundEndsText}
                 </Badge>
