@@ -5,7 +5,10 @@ import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import { Application, PayoutToken, Round } from "../../../functions/types";
 import { formatAmount, payoutTokens } from "../../../functions/utils";
 import { ImageResponse } from "next/server";
-import { getApplication, getRoundForExplorer } from "../../../functions/round";
+import {
+  getApplicationsForExplorer,
+  getRoundForExplorer,
+} from "../../../functions/round";
 import utc from "dayjs/plugin/utc";
 dayjs.extend(utc);
 dayjs.extend(LocalizedFormat);
@@ -41,25 +44,10 @@ async function getData(chainId: number, roundId: Address) {
 
     if (!matchingFundPayoutToken) throw new Error("token not found");
 
-    const applicationIds = roundData.approvedProjects?.map(
-      (proj) => proj.grantApplicationId
-    );
-
-    const arr = applicationIds
-      ? applicationIds.map((id) => {
-          return getApplication({
-            chainId: chainId as number,
-            roundId: roundId as string,
-            applicationId: id as string,
-          });
-        })
-      : [];
-    applications = await Promise.all(arr).then(
-      (applications) =>
-        applications.filter(
-          (application) => application?.status === "APPROVED"
-        ) as Application[] | undefined
-    );
+    applications = await getApplicationsForExplorer({
+      roundId: roundId,
+      chainId: chainId,
+    });
 
     poolTokenPrice = matchingFundPayoutToken.redstoneTokenId
       ? await getTokenPrice(matchingFundPayoutToken.redstoneTokenId)
