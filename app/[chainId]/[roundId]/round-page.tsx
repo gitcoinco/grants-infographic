@@ -1404,10 +1404,10 @@ const RoundLeaderboard = ({
                     <th scope="col" className="px-3 py-3">
                       Contributions
                     </th>
-                    <th scope="col" className="px-3 py-3">
+                    <th scope="col" className="px-3 py-3 text-right">
                       Crowdfunded USD
                     </th>
-                    <th scope="col" className="relative py-3 pl-3 pr-4">
+                    <th scope="col" className="relative py-3 pl-3 pr-4 text-right">
                       Matched USD
                     </th>
                   </tr>
