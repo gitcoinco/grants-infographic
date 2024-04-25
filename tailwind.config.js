@@ -10,9 +10,9 @@ module.exports = {
   theme: {
     extend: {
        fontFamily: {
-      sans: ['"Modern Era"', ...defaultTheme.fontFamily.sans],
-      mono: ['"DM Mono"', ...defaultTheme.fontFamily.mono],
-    },
+          sans: ['var(--font-modern-era)', ...defaultTheme.fontFamily.sans],
+          mono: ['var(--font-dm-mono)', ...defaultTheme.fontFamily.mono],
+        },
        colors: {
         transparent: "transparent",
         black: "#000",

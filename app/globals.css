@@ -1,53 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://use.typekit.net/hbx6hnl.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Miriam+Libre:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap");
-
-@font-face {
-  font-family: "Modern Era Regular";
-  font-weight: 400;
-  src:
-    local("ModernEraRegular"),
-    url("/public/ModernEra-Regular.woff") format("woff");
-}
-
-@font-face {
-  font-family: "Modern Era Medium";
-  font-weight: 500;
-  src:
-    local("ModernEraMedium"),
-    url("/public/modern-era-medium.otf") format("opentype");
-}
-
-@font-face {
-  font-family: "Modern Era Bold";
-  font-weight: 600;
-  src:
-    local("ModernEraBold"),
-    url("/public/modern-era-bold.otf") format("opentype");
-}
-
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono&display=swap");
-
-
-.font-dm-mono {
-  font-family: "DM Mono", monospace;
-}
-
-.font-modern-era-medium {
-  font-family: "Modern Era Medium", serif;
-}
-
-.font-modern-era-regular {
-  font-family: "Modern Era Regular", serif;
-}
-
-.font-modern-era-bold {
-    font-family: 'Modern Era Bold', serif;
-}
 
 .blurred::before {
   content: "";
@@ -101,14 +54,6 @@
   }
 }
 
-
-
-/* old */
-/* 
-body {
-  font-family: 'Inter', sans-serif;
-  color: #2D3230;
-} */
 .svg-container .main-svg {
   background: transparent !important;
   max-width: 100%;
