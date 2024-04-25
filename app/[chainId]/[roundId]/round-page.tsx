@@ -556,7 +556,7 @@ const ReportCard = ({
   const totalDonations = useMemo(() => {
     return (
       applications
-        ?.map((application) => application.uniqueDonorsCount)
+        ?.map((application) => Number(application.totalDonationsCount) ?? 0)
         .reduce((acc, amount) => acc + amount, 0) ?? 0
     );
   }, [applications]);
