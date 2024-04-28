@@ -13,29 +13,31 @@ export default function GrantPlot({
 }) {
   const { height, width } = useWindowDimensions();
 
-  const colors = [
-    "#FCD661",
-    "#645AD8",
-    "#FFC2EE",
-    "#25BDCE",
-    "#5F94BC",
-    "#B3DE9F",
-    "#FF9776",
-    "#FFEFBE",
-    "#D9D6FF",
-    "#FFE5F8",
-    "#C8F6F6",
-    "#D3EDFE",
-    "#DBF0DB",
-    "#FFD9CE",
-    "#FBC624",
-    "#6935FF",
-    "#FF00B8",
-    "#73E2E2",
-    "#15B8DC",
-    "#248B5A",
-    "#FF7043",
-  ];
+  const colors = Array(10)
+    .fill([
+      "#FFEFBE",
+      "#D9D6FF",
+      "#D3EDFE",
+      "#25BDCE",
+      "#B3DE9F",
+      "#DBF0DB",
+      "#248B5A",
+      "#FF7043",
+      "#645AD8",
+      "#FFC2EE",
+      "#FF9776",
+      "#5F94BC",
+      "#FFE5F8",
+      "#C8F6F6",
+      "#FBC624",
+      "#6935FF",
+      "#FF00B8",
+      "#73E2E2",
+      "#FFD9CE",
+      "#FCD661",
+      "#15B8DC",
+    ])
+    .flat();
 
   useEffect(() => {
     window.matchMedia("(min-width: 37.5rem)").matches
