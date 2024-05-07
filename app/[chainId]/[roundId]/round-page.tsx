@@ -186,7 +186,7 @@ function AfterRoundStart(props: {
   const nativePayoutToken = votingTokens.find(
     (t) =>
       t.chainId === Number(props.chainId) &&
-      t.address === getAddress(props.round.token)
+      t.address.toLowerCase() === getAddress(props.round.token).toLowerCase()
   );
 
   const tokenData = data ?? {
@@ -1181,7 +1181,6 @@ const Stats = ({
 }): JSX.Element => {
   const tokenAmount =
     round.roundMetadata?.quadraticFundingConfig?.matchingFundsAvailable ?? 0;
-
   const { data: poolTokenPrice } = useTokenPrice(token?.redstoneTokenId);
   const matchingPoolUSD = poolTokenPrice
     ? Number(poolTokenPrice) * tokenAmount
@@ -1407,7 +1406,10 @@ const RoundLeaderboard = ({
                     <th scope="col" className="px-3 py-3 text-right">
                       Crowdfunded USD
                     </th>
-                    <th scope="col" className="relative py-3 pl-3 pr-4 text-right">
+                    <th
+                      scope="col"
+                      className="relative py-3 pl-3 pr-4 text-right"
+                    >
                       Matched USD
                     </th>
                   </tr>
