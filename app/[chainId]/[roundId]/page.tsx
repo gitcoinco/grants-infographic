@@ -36,7 +36,7 @@ export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
   // read route params
-  const roundId = params.roundId;
+  const roundId = params.roundId.toLowerCase();
   const chainId = params.chainId;
 
   // fetch data
@@ -71,9 +71,13 @@ export default async function Page({
   params: { chainId, roundId },
   searchParams: { search },
 }: GrantPageProps) {
+
   return (
     <>
-      <ViewRoundStats chainId={Number(chainId)} roundId={roundId} />
+      <ViewRoundStats
+        chainId={Number(chainId)}
+        roundId={roundId.toLowerCase()}
+      />
     </>
   );
 }

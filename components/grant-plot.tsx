@@ -120,6 +120,11 @@ export default function GrantPlot({
   });
 
   var parents = Array(values?.length).fill("");
+  var config = {
+    toImageButtonOptions: {
+      scale: 3,
+    },
+  };
 
   return (
     <div className="bg-sand w-full">
@@ -143,7 +148,7 @@ export default function GrantPlot({
               // hoverlabel: {namelength: -1},
               title: { text: "label" },
               mode: "markers",
-              textfont: { size: 18 },
+              textfont: { size: 14 },
               marker: {
                 line: { width: 2 },
 
@@ -152,6 +157,7 @@ export default function GrantPlot({
             },
           ]}
           layout={layout}
+          config={config}
         />
       )}
     </div>
