@@ -45,7 +45,7 @@ async function getData(chainId: number, roundId: Address) {
     if (!matchingFundPayoutToken) throw new Error("token not found");
 
     applications = await getApplicationsForExplorer({
-      roundId: roundId,
+      roundId:  roundId.toLowerCase(),
       chainId: chainId,
     });
 
