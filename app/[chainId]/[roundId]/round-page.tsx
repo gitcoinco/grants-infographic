@@ -415,6 +415,13 @@ function ViewRoundPageHero({
   );
 }
 
+enum LeaderboardSortingKey {
+  TOTAL = "total",
+  CROWDFUNDED_USD = "crodwfunded_usd",
+  MATCHED_USD = "matched_usd",
+  CONTRIBUTIONS_COUNT = "contributions count",
+}
+
 const ReportCard = ({
   round,
   roundId,
@@ -466,6 +473,7 @@ const ReportCard = ({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
   const [isOperatorNotice, setIsOperatorNoticeOpen] = useState(false);
+  const [sortingKey, setSortingKey] = useState(LeaderboardSortingKey.TOTAL);
 
   useEffect(() => {
     if (!roundId) return;
@@ -521,17 +529,36 @@ const ReportCard = ({
       return applicationData;
     });
 
-    const sortedApplications = [...applicationsWithData].sort((a, b) => {
-      const totalA = a.matchingData
-        ? a.matchingData?.matchAmountUSD ?? 0
-        : a.totalAmountDonatedInUsd;
-      const totalB = b.matchingData
-        ? b.matchingData?.matchAmountUSD ?? 0
-        : b.totalAmountDonatedInUsd;
+    return applicationsWithData;
+  }, [applications, projects, round, tokenPrice]);
+
+  const sortedApplicationsWithMetadataAndMatchingData = useMemo(() => {
+    if (!applicationsWithMetadataAndMatchingData) return;
+    const sortedApplications = [
+      ...applicationsWithMetadataAndMatchingData,
+    ].sort((a, b) => {
+      const totalA =
+        sortingKey === LeaderboardSortingKey.MATCHED_USD
+          ? a.matchingData?.matchAmountUSD ?? 0
+          : sortingKey === LeaderboardSortingKey.CROWDFUNDED_USD
+          ? a.totalAmountDonatedInUsd
+          : sortingKey === LeaderboardSortingKey.TOTAL
+          ? (a.totalAmountDonatedInUsd ?? 0) +
+            (a.matchingData?.matchAmountUSD ?? 0)
+          : Number(a.uniqueDonorsCount);
+      const totalB =
+        sortingKey === LeaderboardSortingKey.MATCHED_USD
+          ? b.matchingData?.matchAmountUSD ?? 0
+          : sortingKey === LeaderboardSortingKey.CROWDFUNDED_USD
+          ? b.totalAmountDonatedInUsd
+          : sortingKey === LeaderboardSortingKey.TOTAL
+          ? (b.totalAmountDonatedInUsd ?? 0) +
+            (b.matchingData?.matchAmountUSD ?? 0)
+          : Number(b.uniqueDonorsCount);
       return totalB - totalA;
     });
     return sortedApplications;
-  }, [applications, projects, round, tokenPrice]);
+  }, [applicationsWithMetadataAndMatchingData, sortingKey]);
 
   const projectsMatchAmountInToken =
     applicationsWithMetadataAndMatchingData?.map((application) =>
@@ -606,8 +633,10 @@ const ReportCard = ({
   }, [round, isRoundOperator]);
 
   function downloadProjectsCSV() {
-    if (!applicationsWithMetadataAndMatchingData) return;
-    const data = createApplicationsCSV(applicationsWithMetadataAndMatchingData);
+    if (!sortedApplicationsWithMetadataAndMatchingData) return;
+    const data = createApplicationsCSV(
+      sortedApplicationsWithMetadataAndMatchingData
+    );
     const csvData = Papa.unparse(
       data as unknown as unknown[] | UnparseObject<unknown>
     );
@@ -650,6 +679,12 @@ const ReportCard = ({
           (proj.matchingData?.matchAmountUSD ?? 0).toFixed(2)
         )}`,
         [tokenFieldName]: `${formatAmount(tokenAmount, true)} ${tokenSymbol}`,
+        "TOTAL USD": `$${formatAmount(
+          (
+            (proj.totalAmountDonatedInUsd ?? 0) +
+            (proj.matchingData?.matchAmountUSD ?? 0)
+          ).toFixed(2)
+        )}`,
       };
     });
     return JSON.stringify(list);
@@ -925,10 +960,20 @@ const ReportCard = ({
           </aside>
         </div>
       )}
-      {alloVersion === "allo-v2" && (
+
+      {!!sortedApplicationsWithMetadataAndMatchingData &&
+        !!totalUSDCrowdfunded && (
+          <RoundLeaderboard
+            applications={sortedApplicationsWithMetadataAndMatchingData}
+            sortingKey={sortingKey}
+            setSortingKey={setSortingKey}
+          />
+        )}
+
+      {alloVersion === "allo-v2" && isRoundOperator && (
         <div className="max-w-7xl m-auto">
           <h2 className="w-fit m-auto md:text-3xl text-2xl mb-8 font-medium tracking-tighter">
-            What people are tweeting{" "}
+            What people are tweeting
           </h2>
 
           {isEditorOpen && isRoundOperator && formProps ? (
@@ -1055,11 +1100,7 @@ const ReportCard = ({
           )}
         </div>
       )}
-      {!!applicationsWithMetadataAndMatchingData && !!totalUSDCrowdfunded && (
-        <RoundLeaderboard
-          applications={applicationsWithMetadataAndMatchingData}
-        />
-      )}
+
       <div className="max-w-4xl m-auto w-full bg-green-50 rounded-2xl py-8 px-2 flex justify-center items-center gap-5 flex-wrap">
         <p className="text-2xl">Share the results</p>
         <ShareStatsButton handleClick={() => setIsShareModalOpen(true)} />
@@ -1349,18 +1390,8 @@ export function RoundLogo(props: {
   const LOGO_WIDTH = 128,
     LOGO_HEIGHT = 128;
 
-  // const logoImageUrl = props.imageCid
-  //   ? createIpfsImageUrl({
-  //       baseUrl: ipfsBaseUrl,
-  //       cid: props.imageCid,
-  //     })
-  //   : "/logo-placeholder.png";
   return (
-    // <img
-    //   className={"-mt-16 h-32 w-32 rounded-full ring-4 ring-white bg-white"}
-    //   src={logoImageUrl as string}
-    //   alt={props.alt}
-    // />
+    
     <div className="-mt-16">
       <ImageEditor
         canEdit={!!props.canEdit}
@@ -1377,11 +1408,15 @@ export function RoundLogo(props: {
 
 const RoundLeaderboard = ({
   applications,
+  sortingKey,
+  setSortingKey,
 }: {
   applications: ApplicationWithMatchingData[];
+  sortingKey: LeaderboardSortingKey;
+  setSortingKey: (param1: LeaderboardSortingKey) => void;
 }): JSX.Element => {
   return (
-    <div className="max-w-4xl w-full m-auto px-6 py-12 md:p-12 bg-grey-50 rounded-[2rem]">
+    <div className="max-w-5xl w-full m-auto px-6 py-12 md:p-12 bg-grey-50 rounded-[2rem]">
       <div className="mb-10 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:flex-row flex-col">
         <h2 className="text-center m-auto md:text-3xl text-2xl font-medium tracking-tighter">
           Leaderboard
@@ -1400,17 +1435,55 @@ const RoundLeaderboard = ({
                     <th scope="col" className="px-3 py-3">
                       Project name
                     </th>
-                    <th scope="col" className="px-3 py-3">
+                    <th
+                      scope="col"
+                      className={`px-3 py-3 cursor-pointer text-blue-300 ${
+                        sortingKey === LeaderboardSortingKey.CONTRIBUTIONS_COUNT
+                          ? "font-bold"
+                          : "font-normal"
+                      }`}
+                      onClick={() =>
+                        setSortingKey(LeaderboardSortingKey.CONTRIBUTIONS_COUNT)
+                      }
+                    >
                       Contributions
                     </th>
-                    <th scope="col" className="px-3 py-3 text-right">
+                    <th
+                      scope="col"
+                      className={`px-3 py-3 text-right cursor-pointer text-blue-300 ${
+                        sortingKey === LeaderboardSortingKey.CROWDFUNDED_USD
+                          ? "font-bold"
+                          : "font-normal"
+                      }`}
+                      onClick={() =>
+                        setSortingKey(LeaderboardSortingKey.CROWDFUNDED_USD)
+                      }
+                    >
                       Crowdfunded USD
                     </th>
                     <th
                       scope="col"
-                      className="relative py-3 pl-3 pr-4 text-right"
+                      className={`px-3 py-3 text-right cursor-pointer text-blue-300 ${
+                        sortingKey === LeaderboardSortingKey.MATCHED_USD
+                          ? "font-bold"
+                          : "font-normal"
+                      }`}
+                      onClick={() =>
+                        setSortingKey(LeaderboardSortingKey.MATCHED_USD)
+                      }
                     >
                       Matched USD
+                    </th>
+                    <th
+                      scope="col"
+                      className={`relative py-3 pl-3 pr-4 text-right cursor-pointer text-blue-300 ${
+                        sortingKey === LeaderboardSortingKey.TOTAL
+                          ? "font-bold"
+                          : "font-normal"
+                      }`}
+                      onClick={() => setSortingKey(LeaderboardSortingKey.TOTAL)}
+                    >
+                      Total USD
                     </th>
                   </tr>
                 </thead>
@@ -1434,10 +1507,19 @@ const RoundLeaderboard = ({
                         $
                         {formatAmount(proj.totalAmountDonatedInUsd?.toFixed(2))}
                       </td>
-                      <td className="relative whitespace-nowrap py-3 pl-3 pr-4 text-right">
+                      <td className="whitespace-nowrap px-3 py-3 text-right">
                         $
                         {formatAmount(
                           (proj.matchingData?.matchAmountUSD ?? 0).toFixed(2)
+                        )}
+                      </td>
+                      <td className="relative whitespace-nowrap py-3 pl-3 pr-4 text-right">
+                        $
+                        {formatAmount(
+                          (
+                            (proj.matchingData?.matchAmountUSD ?? 0) +
+                            (proj.totalAmountDonatedInUsd ?? 0)
+                          ).toFixed(2)
                         )}
                       </td>
                     </tr>
