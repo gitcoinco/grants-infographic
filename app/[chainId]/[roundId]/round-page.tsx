@@ -266,6 +266,9 @@ function ViewRoundPageHero({
 
   const chain = getChainById(chainId);
 
+  const capitalize = (word: string) =>
+    word.charAt(0).toUpperCase() + word.slice(1);
+
   return (
     <>
       <section>
@@ -341,8 +344,7 @@ function ViewRoundPageHero({
                   src={chain.icon}
                   alt="Round Chain Logo"
                 />
-                {/* TODO: capitalize */}
-                <span>{chain.name}</span>
+                <span>{capitalize(chain.name)}</span>
               </div>
             </div>
 
@@ -652,7 +654,7 @@ const ReportCard = ({
             (proj.totalAmountDonatedInUsd ?? 0) +
             (proj.matchingData?.matchAmountUSD ?? 0)
           ).toFixed(2)
-        )}`
+        )}`,
       };
     });
     return JSON.stringify(list);
@@ -1348,7 +1350,6 @@ export function RoundLogo(props: {
     LOGO_HEIGHT = 128;
 
   return (
-    
     <div className="-mt-16">
       <ImageEditor
         canEdit={!!props.canEdit}
