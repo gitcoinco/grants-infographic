@@ -1,6 +1,5 @@
 import {
   MatchingStatsData,
-  PayoutToken,
   Program,
   ProjectApplication,
   RedstoneTokenIds,
