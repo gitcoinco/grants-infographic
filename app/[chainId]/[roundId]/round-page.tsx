@@ -19,7 +19,6 @@ import {
   isDirectRound,
   isInfiniteDate,
   pinFileToIPFS,
-  votingTokens,
 } from "../../../functions/utils";
 import NotFoundPage from "../../../components/not-found-page";
 import {
@@ -53,7 +52,6 @@ import {
   Application,
   DistributionMatch,
   Hex,
-  PayoutToken,
   ProgressStatus,
   ProgressStep,
   Project,
@@ -61,11 +59,9 @@ import {
   RoundCategory,
   RoundMetadata,
   UpdateRoundData,
-  VotingToken,
   getRoundStrategyTitle,
 } from "../../../functions/types";
 import {
-  CHAINS,
   formatUTCDateAsISOString,
   getDaysLeft,
   getUTCTime,
@@ -73,7 +69,6 @@ import {
 import { Badge, Button } from "../../styles";
 import { CalendarIcon } from "../../../components/icons";
 import { useTokenPrice } from "../../../hooks/useTokenPrice";
-import useWindowDimensions from "../../../hooks/useWindowDimensions";
 import dynamic from "next/dynamic";
 import Loading from "../../loading";
 import React from "react";
@@ -94,6 +89,12 @@ import ReactCrop, {
 import "react-image-crop/dist/ReactCrop.css";
 import Image from "next/image";
 import IpfsImage from "../../../components/ipfs-image";
+import {
+  TToken,
+  getChainById,
+  getTokensByChainId,
+} from "@grants-labs/gitcoin-chain-data";
+
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
   loading: () => <>Loading...</>,
@@ -177,23 +178,11 @@ function AfterRoundStart(props: {
     setProjects(projects);
   }, [round]);
 
-  const { data } = useToken({
-    address: getAddress(props.round.token),
-    chainId: Number(props.chainId),
-  });
-
-  // TODO: need a JSON file for votingTokens
-  const nativePayoutToken = votingTokens.find(
-    (t) =>
-      t.chainId === Number(props.chainId) &&
-      t.address.toLowerCase() === getAddress(props.round.token).toLowerCase()
+  const tokenData = getTokensByChainId(Number(chainId)).find(
+    (t) => t.address.toLowerCase() === props.round.token.toLowerCase()
   );
 
-  const tokenData = data ?? {
-    ...nativePayoutToken,
-    symbol: nativePayoutToken?.name ?? "ETH",
-  };
-  const tokenSymbol = tokenData.symbol;
+  const tokenSymbol = tokenData?.code;
 
   return (
     <>
@@ -204,7 +193,7 @@ function AfterRoundStart(props: {
           roundId={roundId}
           isBeforeRoundEndDate={isBeforeRoundEndDate}
           isAfterRoundEndDate={isAfterRoundEndDate}
-          tokenSymbol={tokenData?.symbol}
+          tokenSymbol={tokenSymbol}
           setBannerImg={setBannerImg}
           setLogoImg={setLogoImg}
           isEditorOpen={isEditorOpen}
@@ -212,8 +201,7 @@ function AfterRoundStart(props: {
 
         <ReportCard
           projects={projects}
-          token={nativePayoutToken}
-          tokenSymbol={tokenSymbol}
+          token={tokenData}
           isBeforeRoundEndDate={isBeforeRoundEndDate}
           roundId={roundId}
           round={round}
@@ -274,6 +262,11 @@ function ViewRoundPageHero({
   const bannerChangedHandler = (banner?: Blob) => {
     setBannerImg(banner);
   };
+
+  const chain = getChainById(chainId);
+
+  const capitalize = (word: string) =>
+    word.charAt(0).toUpperCase() + word.slice(1);
 
   return (
     <>
@@ -347,20 +340,10 @@ function ViewRoundPageHero({
               <div className="flex items-center">
                 <img
                   className="w-4 h-4 mr-1"
-                  src={CHAINS[chainId]?.logo}
+                  src={chain.icon}
                   alt="Round Chain Logo"
                 />
-                <span>
-                  {
-                    (
-                      CHAINS[chainId] as {
-                        id: ChainId;
-                        name: string;
-                        logo: string;
-                      }
-                    )?.name
-                  }
-                </span>
+                <span>{capitalize(chain.name)}</span>
               </div>
             </div>
 
@@ -427,7 +410,6 @@ const ReportCard = ({
   roundId,
   chainId,
   token,
-  tokenSymbol,
   projects,
   logoImg,
   bannerImg,
@@ -435,8 +417,7 @@ const ReportCard = ({
   setIsEditorOpen,
 }: {
   projects?: Project[];
-  token?: PayoutToken;
-  tokenSymbol?: string;
+  token?: TToken;
   isBeforeRoundEndDate?: boolean;
   roundId: string;
   round: Round;
@@ -560,18 +541,6 @@ const ReportCard = ({
     return sortedApplications;
   }, [applicationsWithMetadataAndMatchingData, sortingKey]);
 
-  const projectsMatchAmountInToken =
-    applicationsWithMetadataAndMatchingData?.map((application) =>
-      application.matchingData
-        ? parseFloat(
-            ethers.utils.formatUnits(
-              application.matchingData?.matchAmountInToken ?? 0,
-              token?.decimal
-            )
-          )
-        : 0
-    ) ?? [];
-
   const totalUSDCrowdfunded = useMemo(() => {
     return (
       applications
@@ -657,14 +626,14 @@ const ReportCard = ({
   const createApplicationsCSV = (
     applications: ApplicationWithMatchingData[]
   ) => {
-    const tokenFieldName = `MATCHED ${token?.name}`;
+    const tokenFieldName = `MATCHED ${token?.code}`;
 
     const list = applications.map((proj, index) => {
       const tokenAmount = proj.matchingData
         ? parseFloat(
             ethers.utils.formatUnits(
               proj.matchingData.matchAmountInToken,
-              token?.decimal
+              token?.decimals
             )
           )
         : 0;
@@ -678,7 +647,7 @@ const ReportCard = ({
         "MATCHED USD": `$${formatAmount(
           (proj.matchingData?.matchAmountUSD ?? 0).toFixed(2)
         )}`,
-        [tokenFieldName]: `${formatAmount(tokenAmount, true)} ${tokenSymbol}`,
+        [tokenFieldName]: `${formatAmount(tokenAmount, true)} ${token?.code}`,
         "TOTAL USD": `$${formatAmount(
           (
             (proj.totalAmountDonatedInUsd ?? 0) +
@@ -845,7 +814,7 @@ const ReportCard = ({
       <div className="items-center gap-y-2 gap-x-4 mt-10 w-full grid sm:grid-cols-2">
         <ShareButton
           round={round}
-          tokenSymbol={tokenSymbol}
+          tokenSymbol={token?.code}
           totalUSDCrowdfunded={totalUSDCrowdfunded}
           totalDonations={totalDonations}
           chainId={chainId}
@@ -854,7 +823,7 @@ const ReportCard = ({
         />
         <ShareButton
           round={round}
-          tokenSymbol={tokenSymbol}
+          tokenSymbol={token?.code}
           totalUSDCrowdfunded={totalUSDCrowdfunded}
           totalDonations={totalDonations}
           chainId={chainId}
@@ -934,9 +903,7 @@ const ReportCard = ({
       </div>
       <Stats
         token={token}
-        tokenSymbol={tokenSymbol}
         round={round}
-        projectsMatchAmountInToken={projectsMatchAmountInToken}
         totalCrowdfunded={totalUSDCrowdfunded}
         totalDonations={totalDonations}
         totalDonors={round.uniqueDonorsCount ?? 0}
@@ -1201,10 +1168,7 @@ const Stats = ({
   round,
   totalCrowdfunded,
   totalProjects,
-  // matching value by projects
-  projectsMatchAmountInToken,
   token,
-  tokenSymbol,
   totalDonations,
   totalDonors,
   statsLoading,
@@ -1212,10 +1176,8 @@ const Stats = ({
   round: Round;
   totalCrowdfunded: number;
   totalProjects: number;
-  projectsMatchAmountInToken: number[];
   chainId: number;
-  token?: PayoutToken;
-  tokenSymbol?: string;
+  token?: TToken;
   totalDonations: number;
   totalDonors: number;
   statsLoading: boolean;
@@ -1229,16 +1191,12 @@ const Stats = ({
   const matchingCapPercent =
     round.roundMetadata?.quadraticFundingConfig?.matchingCapAmount ?? 0;
   const matchingCapTokenValue = (tokenAmount * matchingCapPercent) / 100;
-  const projectsReachedMachingCap: number =
-    projectsMatchAmountInToken?.filter(
-      (amount) => amount >= matchingCapTokenValue
-    )?.length ?? 0;
 
   return (
     <div className="max-w-6xl m-auto w-full">
       <div className={`xl:grid-cols-3 grid grid-cols-2 gap-2 sm:gap-4`}>
         <StatCard
-          statValue={`${formatAmount(tokenAmount, true)} ${tokenSymbol}`}
+          statValue={`${formatAmount(tokenAmount, true)} ${token?.code}`}
           secondaryStatValue={`${
             matchingPoolUSD ? `($${formatAmount(matchingPoolUSD ?? 0)})` : ""
           }`}
@@ -1256,7 +1214,7 @@ const Stats = ({
             secondaryStatValue={`(${formatAmount(
               matchingCapTokenValue,
               true
-            )} ${tokenSymbol})`}
+            )} ${token?.code})`}
             statName="Matching Cap"
             isValueLoading={statsLoading}
           />
@@ -1391,7 +1349,6 @@ export function RoundLogo(props: {
     LOGO_HEIGHT = 128;
 
   return (
-    
     <div className="-mt-16">
       <ImageEditor
         canEdit={!!props.canEdit}

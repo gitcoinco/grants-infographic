@@ -2,14 +2,15 @@ import { GrantPageProps } from "./page";
 import { Address } from "viem";
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
-import { Application, PayoutToken, Round } from "../../../functions/types";
-import { formatAmount, payoutTokens } from "../../../functions/utils";
+import { Application, Round } from "../../../functions/types";
+import { formatAmount } from "../../../functions/utils";
 import { ImageResponse } from "next/server";
 import {
   getApplicationsForExplorer,
   getRoundForExplorer,
 } from "../../../functions/round";
 import utc from "dayjs/plugin/utc";
+import { getTokensByChainId } from "@grants-labs/gitcoin-chain-data";
 dayjs.extend(utc);
 dayjs.extend(LocalizedFormat);
 
@@ -35,17 +36,14 @@ async function getData(chainId: number, roundId: Address) {
       roundData && roundData.roundStartTime >= currentTime;
     if (isBeforeRoundStartDate) throw new Error("round has not started yet");
 
-    // TODO: use JSON file instead of payout tokens
-    const matchingFundPayoutToken: PayoutToken = payoutTokens.filter(
-      (t) =>
-        t.address.toLowerCase() == roundData?.token.toLowerCase() &&
-        t.chainId == chainId
-    )[0];
+    const matchingFundPayoutToken = getTokensByChainId(Number(chainId)).find(
+      (t) => t.address.toLowerCase() === roundData?.token.toLowerCase()
+    );
 
     if (!matchingFundPayoutToken) throw new Error("token not found");
 
     applications = await getApplicationsForExplorer({
-      roundId:  roundId.toLowerCase(),
+      roundId: roundId.toLowerCase(),
       chainId: chainId,
     });
 
@@ -53,7 +51,7 @@ async function getData(chainId: number, roundId: Address) {
       ? await getTokenPrice(matchingFundPayoutToken.redstoneTokenId)
       : undefined;
 
-    tokenSymbol = matchingFundPayoutToken.name;
+    tokenSymbol = matchingFundPayoutToken?.code;
   } catch (err) {
     console.log(err);
   }

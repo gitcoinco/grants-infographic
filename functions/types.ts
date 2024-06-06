@@ -482,16 +482,6 @@ export enum ProgressStatus {
   IS_ERROR = "IS_ERROR",
 }
 
-export type PayoutToken = {
-  name: string;
-  chainId: number;
-  address: string;
-  decimal: number;
-  logo?: string;
-  default?: boolean;
-  redstoneTokenId?: string;
-};
-
 export type RoundInfo = {
   tweetURLs: string;
   preamble: string;
@@ -522,22 +512,6 @@ export type MatchingStatsData = {
 };
 
 export type Hex = `0x${string}`;
-
-export type VotingToken = {
-  name: string;
-  chainId: ChainId;
-  address: Hex;
-  decimal: number;
-  logo?: string;
-  default?: boolean;
-  redstoneTokenId: string;
-  permitVersion?: string;
-  //TODO: remove if the previous default was intended to be used as defaultForVoting
-  defaultForVoting: boolean;
-  //TODO: split PayoutTokens and VotingTokens in
-  // 2 different types/lists and remove the following attribute
-  canVote: boolean;
-};
 
 export interface Program {
   /**
