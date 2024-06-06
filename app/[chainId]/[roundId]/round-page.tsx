@@ -52,7 +52,6 @@ import {
   Application,
   DistributionMatch,
   Hex,
-  PayoutToken,
   ProgressStatus,
   ProgressStep,
   Project,
