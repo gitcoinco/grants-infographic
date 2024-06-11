@@ -8,6 +8,12 @@ import {
 import { BigNumber, ethers } from "ethers";
 import { getAddress } from "viem";
 
+export function stringToBlobUrl(data: string): string {
+  const blob = new Blob([data], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  return url;
+}
+
 export const getBlockExplorerTxLink = (chainId: ChainId, hash: string) => {
   if (chainId == ChainId.PGN)
     return `https://explorer.publicgoods.network/tx/${hash}`;

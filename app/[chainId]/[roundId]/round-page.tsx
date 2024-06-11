@@ -19,6 +19,7 @@ import {
   isDirectRound,
   isInfiniteDate,
   pinFileToIPFS,
+  stringToBlobUrl,
 } from "../../../functions/utils";
 import NotFoundPage from "../../../components/not-found-page";
 import {
@@ -93,7 +94,7 @@ import {
   TToken,
   getChainById,
   getTokensByChainId,
-} from "@grants-labs/gitcoin-chain-data";
+} from "@gitcoin/gitcoin-chain-data";
 
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
@@ -264,7 +265,6 @@ function ViewRoundPageHero({
   };
 
   const chain = getChainById(chainId);
-
   const capitalize = (word: string) =>
     word.charAt(0).toUpperCase() + word.slice(1);
 
@@ -340,7 +340,7 @@ function ViewRoundPageHero({
               <div className="flex items-center">
                 <img
                   className="w-4 h-4 mr-1"
-                  src={chain.icon}
+                  src={stringToBlobUrl(chain.icon)}
                   alt="Round Chain Logo"
                 />
                 <span>{capitalize(chain.name)}</span>
