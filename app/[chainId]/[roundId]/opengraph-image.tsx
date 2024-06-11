@@ -10,7 +10,7 @@ import {
   getRoundForExplorer,
 } from "../../../functions/round";
 import utc from "dayjs/plugin/utc";
-import { getTokensByChainId } from "@grants-labs/gitcoin-chain-data";
+import { getTokensByChainId } from "@gitcoin/gitcoin-chain-data";
 dayjs.extend(utc);
 dayjs.extend(LocalizedFormat);
 
