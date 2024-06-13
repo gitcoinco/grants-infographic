@@ -95,6 +95,7 @@ import {
   getChainById,
   getTokensByChainId,
 } from "@gitcoin/gitcoin-chain-data";
+import { useRoundMatches } from "../../../hooks/useRoundMatch";
 
 const GrantPlot = dynamic(() => import("../../../components/grant-plot"), {
   ssr: false,
@@ -107,6 +108,8 @@ export type ProjectMatchingData = DistributionMatch & {
 
 type ApplicationWithMatchingData = Application & {
   matchingData?: ProjectMatchingData;
+  estimatedMatchedUSD?: number;
+  estimatedMatchedInToken?: bigint;
 };
 const BeforeRoundStart = () => {
   return <div>This round has not started yet. Check back later!</div>;
@@ -182,7 +185,7 @@ function AfterRoundStart(props: {
   const tokenData = getTokensByChainId(Number(chainId)).find(
     (t) => t.address.toLowerCase() === props.round.token.toLowerCase()
   );
-
+  console.log({ tokenData });
   const tokenSymbol = tokenData?.code;
 
   return (
@@ -343,7 +346,7 @@ function ViewRoundPageHero({
                   src={stringToBlobUrl(chain.icon)}
                   alt="Round Chain Logo"
                 />
-                <span>{capitalize(chain.name)}</span>
+                <span>{capitalize(chain.prettyName)}</span>
               </div>
             </div>
 
@@ -467,6 +470,11 @@ const ReportCard = ({
       roundId,
     });
 
+  const { roundMatches } = useRoundMatches(
+    Number(chainId),
+    roundId?.toLowerCase() as string
+  );
+
   const operatorWallets = round?.roles?.map(
     (account: { address: string }) => account.address
   );
@@ -498,8 +506,13 @@ const ReportCard = ({
         ? projectMatchingData.matchPoolPercentage * matchingPoolUSD
         : 0;
 
+      const matchingEstimate = roundMatches?.find(
+        (entry) => entry.applicationId === application.id
+      );
       const applicationData = {
         ...application,
+        estimatedMatchedUSD: matchingEstimate?.matchedUSD,
+        estimatedMatchedInToken: matchingEstimate?.matched,
         matchingData: projectMatchingData
           ? {
               ...projectMatchingData,
@@ -511,7 +524,7 @@ const ReportCard = ({
     });
 
     return applicationsWithData;
-  }, [applications, projects, round, tokenPrice]);
+  }, [applications, projects, round, tokenPrice, roundMatches]);
 
   const sortedApplicationsWithMetadataAndMatchingData = useMemo(() => {
     if (!applicationsWithMetadataAndMatchingData) return;
@@ -520,21 +533,21 @@ const ReportCard = ({
     ].sort((a, b) => {
       const totalA =
         sortingKey === LeaderboardSortingKey.MATCHED_USD
-          ? a.matchingData?.matchAmountUSD ?? 0
+          ? a.matchingData?.matchAmountUSD ?? a.estimatedMatchedUSD ?? 0
           : sortingKey === LeaderboardSortingKey.CROWDFUNDED_USD
           ? a.totalAmountDonatedInUsd
           : sortingKey === LeaderboardSortingKey.TOTAL
           ? (a.totalAmountDonatedInUsd ?? 0) +
-            (a.matchingData?.matchAmountUSD ?? 0)
+            (a.matchingData?.matchAmountUSD ?? a.estimatedMatchedUSD ?? 0)
           : Number(a.uniqueDonorsCount);
       const totalB =
         sortingKey === LeaderboardSortingKey.MATCHED_USD
-          ? b.matchingData?.matchAmountUSD ?? 0
+          ? b.matchingData?.matchAmountUSD ?? b.estimatedMatchedUSD ?? 0
           : sortingKey === LeaderboardSortingKey.CROWDFUNDED_USD
           ? b.totalAmountDonatedInUsd
           : sortingKey === LeaderboardSortingKey.TOTAL
           ? (b.totalAmountDonatedInUsd ?? 0) +
-            (b.matchingData?.matchAmountUSD ?? 0)
+            (b.matchingData?.matchAmountUSD ?? b.estimatedMatchedUSD ?? 0)
           : Number(b.uniqueDonorsCount);
       return totalB - totalA;
     });
@@ -626,17 +639,33 @@ const ReportCard = ({
   const createApplicationsCSV = (
     applications: ApplicationWithMatchingData[]
   ) => {
-    const tokenFieldName = `MATCHED ${token?.code}`;
+    const isMatchingDataAvailable =
+      !!applications?.length && !!applications[0].matchingData?.matchAmountUSD;
+    const tokenFieldName = `${!isMatchingDataAvailable ? "EST. " : ""}MATCHED ${
+      token?.code
+    }`;
+    const matchedUsdFieldName = isMatchingDataAvailable
+      ? "MATCHED USD"
+      : "EST. MATCHED USD";
 
     const list = applications.map((proj, index) => {
-      const tokenAmount = proj.matchingData
-        ? parseFloat(
-            ethers.utils.formatUnits(
-              proj.matchingData.matchAmountInToken,
-              token?.decimals
+      const tokenAmount =
+        !isMatchingDataAvailable && !!proj.estimatedMatchedInToken
+          ? parseFloat(
+              ethers.utils.formatUnits(
+                proj.estimatedMatchedInToken,
+                token?.decimals
+              )
             )
-          )
-        : 0;
+          : proj.matchingData
+          ? parseFloat(
+              ethers.utils.formatUnits(
+                proj.matchingData.matchAmountInToken,
+                token?.decimals
+              )
+            )
+          : 0;
+
       return {
         RANK: index + 1,
         "PROJECT NAME": proj.project?.metadata?.title ?? "-",
@@ -644,14 +673,19 @@ const ReportCard = ({
         "CROWDFUNDED USD": `$${formatAmount(
           proj.totalAmountDonatedInUsd?.toFixed(2)
         )}`,
-        "MATCHED USD": `$${formatAmount(
-          (proj.matchingData?.matchAmountUSD ?? 0).toFixed(2)
+        [matchedUsdFieldName]: `$${formatAmount(
+          (isMatchingDataAvailable
+            ? proj.matchingData?.matchAmountUSD ?? 0
+            : proj.estimatedMatchedUSD ?? 0
+          ).toFixed(2)
         )}`,
         [tokenFieldName]: `${formatAmount(tokenAmount, true)} ${token?.code}`,
         "TOTAL USD": `$${formatAmount(
           (
             (proj.totalAmountDonatedInUsd ?? 0) +
-            (proj.matchingData?.matchAmountUSD ?? 0)
+            (isMatchingDataAvailable
+              ? proj.matchingData?.matchAmountUSD ?? 0
+              : proj.estimatedMatchedUSD ?? 0)
           ).toFixed(2)
         )}`,
       };
@@ -1372,6 +1406,9 @@ const RoundLeaderboard = ({
   sortingKey: LeaderboardSortingKey;
   setSortingKey: (param1: LeaderboardSortingKey) => void;
 }): JSX.Element => {
+  const isMatchingDataAvailable =
+    !!applications?.length && !!applications[0].matchingData?.matchAmountUSD;
+
   return (
     <div className="max-w-5xl w-full m-auto px-6 py-12 md:p-12 bg-grey-50 rounded-[2rem]">
       <div className="mb-10 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:flex-row flex-col">
@@ -1429,7 +1466,9 @@ const RoundLeaderboard = ({
                         setSortingKey(LeaderboardSortingKey.MATCHED_USD)
                       }
                     >
-                      Matched USD
+                      {isMatchingDataAvailable
+                        ? "Matched USD"
+                        : "Est. Matched USD"}
                     </th>
                     <th
                       scope="col"
@@ -1467,14 +1506,19 @@ const RoundLeaderboard = ({
                       <td className="whitespace-nowrap px-3 py-3 text-right">
                         $
                         {formatAmount(
-                          (proj.matchingData?.matchAmountUSD ?? 0).toFixed(2)
+                          (isMatchingDataAvailable
+                            ? proj.matchingData?.matchAmountUSD ?? 0
+                            : proj.estimatedMatchedUSD ?? 0
+                          ).toFixed(2)
                         )}
                       </td>
                       <td className="relative whitespace-nowrap py-3 pl-3 pr-4 text-right">
                         $
                         {formatAmount(
                           (
-                            (proj.matchingData?.matchAmountUSD ?? 0) +
+                            (isMatchingDataAvailable
+                              ? proj.matchingData?.matchAmountUSD ?? 0
+                              : proj.estimatedMatchedUSD ?? 0) +
                             (proj.totalAmountDonatedInUsd ?? 0)
                           ).toFixed(2)
                         )}
