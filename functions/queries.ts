@@ -21,9 +21,7 @@ export const getApplicationsForExplorerQuery = gql`
         applicationsStartTime
         applicationsEndTime
         matchTokenAddress
-        roundMetadata
       }
-      metadata
       project: canonicalProject {
         tags
         id
